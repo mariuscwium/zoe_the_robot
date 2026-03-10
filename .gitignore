@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+logs/
+.env
+.env.local
+.vercel
+*.tsbuildinfo
+twins/fixtures/claude/

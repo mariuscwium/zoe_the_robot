@@ -23,6 +23,8 @@ invokes a Claude agent to interpret them, and replies via the Telegram Bot API.
 │   ├── health.ts          # Health check (GET)
 │   └── debug.ts           # Password-protected debug UI (GET /{DEBUG_PATH})
 ├── lib/
+│   ├── deps.ts            # Dependency injection interfaces (Redis, Telegram, Calendar, Claude, Clock)
+│   ├── types.ts           # Domain types (FamilyMember, AuditEntry, ToolResult, etc.)
 │   ├── registry.ts        # Member registry (whitelist) — Redis
 │   ├── history.ts         # Per-member conversation history — Redis
 │   ├── memory.ts          # Memory tool implementations — Redis
@@ -31,10 +33,24 @@ invokes a Claude agent to interpret them, and replies via the Telegram Bot API.
 │   ├── datetime.ts        # Server-side datetime pre-processing
 │   ├── audit.ts           # Audit log append
 │   └── telegram.ts        # Telegram API helpers (sendMessage, getFile)
+├── twins/
+│   ├── redis.ts           # Redis digital twin (stateful behavioral clone)
+│   ├── redis-types.ts     # Redis twin shared types and helpers
+│   ├── redis-strings.ts   # Redis string command handlers
+│   ├── redis-keys.ts      # Redis key management handlers
+│   ├── redis-lists.ts     # Redis list command handlers
+│   ├── telegram.ts        # Telegram Bot API digital twin
+│   ├── calendar.ts        # Google Calendar API digital twin
+│   └── calendar-rrule.ts  # RRULE expansion logic for calendar twin
 ├── tools/
-│   └── index.ts           # All Claude tool definitions
+│   └── index.ts           # All Claude tool definitions (schemas only)
 ├── scripts/
 │   └── bootstrap.ts       # Idempotent deploy script (registry init + webhook registration)
+├── docs/
+│   ├── adr/               # Architecture Decision Records
+│   ├── RFC-001-personal-assistant.md
+│   ├── personal-assistant.feature
+│   └── AGENT-TEAM-DESIGN.md
 ├── CLAUDE.md
 ├── .env.example
 ├── vercel.json
@@ -101,3 +117,22 @@ Full design decisions, data model, and Gherkin feature specs are in:
 - `docs/personal-assistant.feature`
 
 When implementing a feature, read the relevant Gherkin scenarios first — they are the source of truth for behaviour.
+
+## Architecture Decision Records
+
+ADRs live in `docs/adr/NNN-slug.md`. See `docs/adr/000-use-adrs.md` for the format.
+
+When making a non-obvious architectural decision during implementation:
+1. Create a new ADR with the next available number
+2. Record the context, decision, and consequences
+3. If reversing a previous decision, write a new ADR that supersedes the old one (don't edit the original)
+
+## Documentation Gardening
+
+After completing each implementation phase, review and update docs to stay in sync:
+
+1. **CLAUDE.md** — update project structure tree, commands, and conventions if they changed
+2. **RFC** — mark sections as implemented; flag any deviations from the original design
+3. **Feature spec** — if implementation differs from a Gherkin scenario, update the scenario or file an ADR explaining why
+4. **AGENT-TEAM-DESIGN.md** — update phase status, twin coverage, and any new patterns discovered
+5. **ADRs** — capture any new architectural decisions made during the phase
