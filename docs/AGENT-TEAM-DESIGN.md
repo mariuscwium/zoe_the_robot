@@ -320,15 +320,28 @@ The orchestrator is a **top-level agent** that:
 5. **Progress tracking:** Maintains a `STATUS.md` file:
 
    ```markdown
-   ## Phase 0: Scaffolding
-   - [x] package.json, tsconfig.json, vercel.json — DONE
-   - [x] lib/deps.ts — DONE
-   - [x] Quality gate: PASS
+   ## Phase 0: Scaffolding — COMPLETE
+   - [x] package.json, tsconfig.json, vercel.json, eslint, .env.example
 
-   ## Phase 1: Digital Twins
-   - [x] twins/redis.ts — DONE (14/14 tests pass)
-   - [ ] twins/telegram.ts — IN PROGRESS (8/12 tests pass)
-   - [x] twins/calendar.ts — DONE (11/11 tests pass)
+   ## Phase 1: Digital Twins — COMPLETE (80 tests)
+   - [x] twins/redis.ts + redis-types/strings/keys/lists
+   - [x] twins/telegram.ts
+   - [x] twins/calendar.ts + calendar-rrule.ts
+
+   ## Phase 2: Core Libraries — COMPLETE (77 tests)
+   - [x] lib/registry, audit, history, memory, calendar, datetime, telegram
+   - [x] tools/index.ts (11 tool schemas)
+
+   ## Phase 3: Integration — COMPLETE (70 tests)
+   - [x] lib/agent.ts + agent-dispatch.ts
+   - [x] api/telegram.ts, api/health.ts, scripts/bootstrap.ts
+   - [x] api/debug.ts + debug-auth/api/dispatch/html/panels
+
+   ## Phase 4: Scenario Tests — COMPLETE (27 tests)
+   - [x] tests/integration/features-0-2.test.ts
+   - [x] tests/integration/features-3-7.test.ts
+
+   Total: 257 tests, 19 files, 0 lint errors, 0 type errors
    ```
 
 6. **Escalation to human:** If the orchestrator itself can't resolve a blocker
