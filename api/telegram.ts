@@ -11,6 +11,7 @@ import { loadHistory, appendMessage } from "../lib/history.js";
 import { sendReply, downloadImage } from "../lib/telegram.js";
 import { appendIncoming } from "../lib/audit.js";
 import { invokeAgent } from "../lib/agent.js";
+import { getProdDeps, getWebhookConfig } from "../lib/prod-deps.js";
 
 interface WebhookConfig {
   webhookSecret: string;
@@ -119,10 +120,16 @@ async function logIncoming(
   });
 }
 
-export default function handler(
-  _req: VercelRequest,
+let prodHandler: ((req: VercelRequest, res: VercelResponse) => Promise<void>) | null = null;
+
+function getHandler(): (req: VercelRequest, res: VercelResponse) => Promise<void> {
+  prodHandler ??= createWebhookHandler(getProdDeps(), getWebhookConfig());
+  return prodHandler;
+}
+
+export default async function handler(
+  req: VercelRequest,
   res: VercelResponse,
-): void {
-  // Production deps will be wired in later
-  res.status(200).json({ ok: true });
+): Promise<void> {
+  await getHandler()(req, res);
 }

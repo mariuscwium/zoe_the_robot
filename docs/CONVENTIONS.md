@@ -38,6 +38,13 @@
 - Authorship injected server-side in all mutating tool wrappers — Claude never writes authorship
 - `confirm_action` tool required before any destructive action or bulk calendar creation (4+ events from one image)
 
+## Production Deps
+
+- Production client implementations live in `lib/clients.ts`
+- `lib/prod-deps.ts` lazily constructs deps from `process.env` — no code changes between environments
+- Default exports in `api/*.ts` use lazy initialization (`??=`) to avoid blowing up at import time in tests
+- All env vars documented in `.env.example`
+
 ## Testing
 
 - Quality gate: `npm run typecheck && npm run lint && npm test`

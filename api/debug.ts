@@ -5,6 +5,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { RedisClient, Clock } from "../lib/deps.js";
+import { getDebugDeps, getDebugConfig } from "../lib/prod-deps.js";
 import {
   isLockedOut,
   recordFailedAttempt,
@@ -94,9 +95,16 @@ function asString(val: unknown): string {
   return "";
 }
 
-export default function handler(
-  _req: VercelRequest,
+let prodHandler: ((req: VercelRequest, res: VercelResponse) => Promise<void>) | null = null;
+
+function getHandler(): (req: VercelRequest, res: VercelResponse) => Promise<void> {
+  prodHandler ??= createDebugHandler(getDebugDeps(), getDebugConfig());
+  return prodHandler;
+}
+
+export default async function handler(
+  req: VercelRequest,
   res: VercelResponse,
-): void {
-  res.status(404).json({ error: "Not found" });
+): Promise<void> {
+  await getHandler()(req, res);
 }

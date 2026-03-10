@@ -4,7 +4,6 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { RedisTwin } from "../twins/redis.js";
 import type { Clock } from "../lib/deps.js";
 import { createDebugHandler, type DebugConfig, type DebugDeps } from "./debug.js";
-import handler from "./debug.js";
 import { writeMemory } from "../lib/memory.js";
 
 const PASSWORD = "test-password";
@@ -218,12 +217,3 @@ describe("GET/POST /api/debug", () => {
   });
 });
 
-describe("default export", () => {
-  it("returns 404", () => {
-    const req = createMockReq({});
-    const res = createMockRes();
-    handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
-    expect(res.statusCode).toBe(404);
-    expect(res.body).toEqual({ error: "Not found" });
-  });
-});
