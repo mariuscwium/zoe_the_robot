@@ -16,7 +16,7 @@ lib/           Core logic (agent, memory, calendar, registry, history, audit, te
 lib/debug-*    Debug UI (auth, api, dispatch, html, panels)
 twins/         Digital twins — stateful behavioural clones of Redis, Telegram, Calendar
 tools/         Claude tool definitions (schemas only)
-scripts/       Bootstrap deploy script
+scripts/       Bootstrap + local dev server
 tests/         Integration scenario tests (Features 0–7)
 docs/          RFC, Gherkin spec, ADRs, conventions, status
 ```
@@ -27,7 +27,7 @@ docs/          RFC, Gherkin spec, ADRs, conventions, status
 npm run typecheck    # tsc --noEmit
 npm run lint         # eslint
 npm test             # vitest
-npm run dev          # Vercel dev server
+npx tsx scripts/local-dev.ts  # Local dev server (no Vercel auth needed)
 npm run bootstrap -- --chatid=111111 --name=Marius --timezone=Pacific/Auckland
 ```
 
