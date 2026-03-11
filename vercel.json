@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "npm run typecheck",
+  "outputDirectory": ".",
   "functions": {
     "api/telegram.ts": { "maxDuration": 60 },
     "api/health.ts": { "maxDuration": 10 },
