@@ -56,8 +56,10 @@ async function fetchLog<T>(
   if (res.error !== undefined) {
     throw new Error(`Redis error reading ${key}: ${res.error}`);
   }
-  const items = res.result as string[];
-  return items.map((raw) => JSON.parse(raw) as T);
+  const items = res.result as unknown[];
+  return items.map((raw) =>
+    typeof raw === "string" ? (JSON.parse(raw) as T) : (raw as T),
+  );
 }
 
 export async function getAuditLog(

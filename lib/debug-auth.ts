@@ -34,7 +34,10 @@ async function loadLockout(
   if (res.result === null || res.result === undefined) {
     return { attempts: 0, lockedUntil: null };
   }
-  return JSON.parse(res.result as string) as LockoutState;
+  if (typeof res.result === "string") {
+    return JSON.parse(res.result) as LockoutState;
+  }
+  return res.result as LockoutState;
 }
 
 async function saveLockout(

@@ -22,7 +22,10 @@ async function loadRegistry(deps: RegistryDeps): Promise<MemberMap> {
   if (res.result === null || res.result === undefined) {
     return {};
   }
-  return JSON.parse(res.result as string) as MemberMap;
+  if (typeof res.result === "string") {
+    return JSON.parse(res.result) as MemberMap;
+  }
+  return res.result as MemberMap;
 }
 
 async function saveRegistry(
