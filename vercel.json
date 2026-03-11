@@ -1,10 +1,9 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/!(*.test).ts",
-      "use": "@vercel/node"
-    }
+    { "src": "api/telegram.ts", "use": "@vercel/node" },
+    { "src": "api/health.ts", "use": "@vercel/node" },
+    { "src": "api/debug.ts", "use": "@vercel/node" }
   ],
   "routes": [
     {
