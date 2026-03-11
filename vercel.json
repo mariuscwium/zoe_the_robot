@@ -1,25 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/telegram.ts", "use": "@vercel/node" },
-    { "src": "api/health.ts", "use": "@vercel/node" },
-    { "src": "api/debug.ts", "use": "@vercel/node" }
-  ],
-  "routes": [
-    {
-      "src": "/api/telegram",
-      "methods": ["POST"],
-      "dest": "/api/telegram"
-    },
-    {
-      "src": "/api/health",
-      "methods": ["GET"],
-      "dest": "/api/health"
-    },
-    {
-      "src": "/api/debug",
-      "methods": ["GET", "POST"],
-      "dest": "/api/debug"
-    }
-  ]
+  "functions": {
+    "api/telegram.ts": { "maxDuration": 60 },
+    "api/health.ts": { "maxDuration": 10 },
+    "api/debug.ts": { "maxDuration": 10 }
+  }
 }
