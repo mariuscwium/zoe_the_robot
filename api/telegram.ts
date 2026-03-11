@@ -9,7 +9,7 @@ import type { FamilyMember } from "../lib/types.js";
 import { getMember } from "../lib/registry.js";
 import { loadHistory, appendMessage } from "../lib/history.js";
 import { sendReply, downloadImage } from "../lib/telegram.js";
-import { appendIncoming } from "../lib/audit.js";
+import { appendAudit, appendIncoming } from "../lib/audit.js";
 import { invokeAgent } from "../lib/agent.js";
 import { getProdDeps, getWebhookConfig } from "../lib/prod-deps.js";
 
@@ -62,6 +62,12 @@ async function handleUpdate(
   const chatId = message.chat.id;
   const member = await getMember(deps, chatId);
   if (member === null) {
+    await appendAudit(deps, {
+      timestamp: deps.clock.now().toISOString(),
+      memberId: "unknown",
+      action: "rejected_unknown_chat",
+      detail: JSON.stringify({ chatId }),
+    });
     res.status(200).json({ ok: true });
     return;
   }
