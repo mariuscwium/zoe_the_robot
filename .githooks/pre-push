@@ -1,0 +1,89 @@
+#!/bin/bash
+# Pre-push hook: scan staged commits for secrets before pushing to remote.
+# Checks all commits that would be pushed (not just the latest).
+
+set -euo pipefail
+
+RED='\033[0;31m'
+NC='\033[0m'
+
+# Patterns that indicate leaked secrets
+PATTERNS=(
+  'sk-ant-[a-zA-Z0-9_-]+'           # Anthropic API keys
+  'AAAA[a-zA-Z0-9_-]{30,}'          # Telegram bot tokens (second part)
+  '[0-9]+:AA[A-Za-z0-9_-]{30,}'     # Full Telegram bot token
+  'AX[a-zA-Z0-9]{20,}'              # Upstash Redis tokens
+  'GOCSPX-[a-zA-Z0-9_-]+'           # Google OAuth client secrets
+  '1//0[a-zA-Z0-9_-]{30,}'          # Google refresh tokens
+  '\$2[aby]\$[0-9]{2}\$[./A-Za-z0-9]{53}' # bcrypt hashes
+  'eyJ[a-zA-Z0-9_-]{20,}\.'         # JWT tokens
+  'ANTHROPIC_API_KEY=[^$]'           # Env var assignments with real values
+  'TELEGRAM_BOT_TOKEN=[^$]'
+  'UPSTASH_REDIS_REST_TOKEN=[^$]'
+  'GOOGLE_CLIENT_SECRET=[^$]'
+  'GOOGLE_REFRESH_TOKEN=[^$]'
+  'DEBUG_JWT_SECRET=[^$]'
+  'DEBUG_PASSWORD_HASH=[^$]'
+)
+
+# Personal info patterns (real chat IDs, emails, phone numbers)
+PII_PATTERNS=(
+  'chatId.*7861391932'               # Real Telegram chat IDs
+  'chat_id.*7861391932'
+  '"id":\s*7861391932'
+  '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'  # Email addresses
+  '\+?[0-9]{1,3}[-. (]?[0-9]{2,4}[-. )]?[0-9]{3,4}[-. ]?[0-9]{3,5}' # Phone numbers
+)
+
+# Allowlisted PII patterns (example/placeholder values in docs & tests)
+PII_ALLOWLIST='example\.com|111111|222222|@group\.calendar|\.apps\.googleusercontent'
+
+# Build combined regex
+COMBINED=$(printf '%s|' "${PATTERNS[@]}")
+COMBINED="${COMBINED%|}"  # Remove trailing pipe
+
+# Read push info from stdin
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+    continue  # Deleting branch
+  fi
+
+  # Determine range of commits to check
+  if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+    # New branch — check all commits not in any remote branch
+    range="$local_sha --not --remotes"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+
+  # Check diff content of commits being pushed
+  # shellcheck disable=SC2086
+  diff_output=$(git diff $range -- . ':!package-lock.json' ':!.env.example' 2>/dev/null || true)
+
+  # Check for secrets
+  matches=$(echo "$diff_output" | grep -nE "$COMBINED" 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    echo -e "${RED}PUSH BLOCKED: Potential secrets detected in commits being pushed${NC}"
+    echo ""
+    echo "$matches" | head -20
+    echo ""
+    echo "If these are false positives, push with: git push --no-verify"
+    exit 1
+  fi
+
+  # Check for PII (with allowlist filtering)
+  PII_COMBINED=$(printf '%s|' "${PII_PATTERNS[@]}")
+  PII_COMBINED="${PII_COMBINED%|}"
+  pii_matches=$(echo "$diff_output" | grep -nE "$PII_COMBINED" 2>/dev/null | \
+    grep -vE "$PII_ALLOWLIST" 2>/dev/null || true)
+  if [ -n "$pii_matches" ]; then
+    echo -e "${RED}PUSH BLOCKED: Potential personal info detected in commits being pushed${NC}"
+    echo ""
+    echo "$pii_matches" | head -20
+    echo ""
+    echo "If these are false positives, push with: git push --no-verify"
+    exit 1
+  fi
+done
+
+exit 0
