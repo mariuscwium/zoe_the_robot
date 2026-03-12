@@ -109,11 +109,10 @@ export async function storeOAuthState(
 ): Promise<void> {
   const data: OAuthState = { memberId, createdAt: new Date().toISOString() };
   const res = await deps.redis.execute([
-    "SET",
+    "SETEX",
     `${STATE_KEY_PREFIX}${state}`,
-    JSON.stringify(data),
-    "EX",
     String(STATE_TTL_SECONDS),
+    JSON.stringify(data),
   ]);
   if (res.error) throw new Error(`Redis error storing state: ${res.error}`);
 }
