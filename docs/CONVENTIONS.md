@@ -19,6 +19,8 @@
 - `log:audit` — audit log (Redis list)
 - `pending_confirm:<id>` — pending confirmation gates
 - `debug:lockout:<ip>` — debug UI login lockout state
+- `oauth:google:<memberId>` — Google Calendar refresh token per member
+- `oauth:state:<uuid>` — CSRF state for OAuth2 consent flow (SETEX 600s TTL)
 
 ## Identity & Privacy
 
@@ -39,12 +41,21 @@
 - Authorship injected server-side in all mutating tool wrappers — Claude never writes authorship
 - `confirm_action` tool required before any destructive action or bulk calendar creation (4+ events from one image)
 
+## Calendar
+
+- `CalendarProvider` factory pattern — `getClient(memberId)` returns per-member `CalendarClient` or `null`
+- OAuth2 tokens stored in Redis (`oauth:google:<memberId>`), refreshed on use
+- When calendar not connected, agent returns `calendar_not_connected` with auth URL
+- Auth URLs derived from `GOOGLE_OAUTH_REDIRECT_URI`, not `VERCEL_URL` (which is per-deployment)
+- `CalendarProviderTwin` wraps `CalendarTwin` in tests — all members authorized by default
+
 ## Production Deps
 
 - Production client implementations live in `lib/clients.ts`
 - `lib/prod-deps.ts` lazily constructs deps from `process.env` — no code changes between environments
 - Default exports in `api/*.ts` use lazy initialization (`??=`) to avoid blowing up at import time in tests
 - All env vars documented in `.env.example`
+- Vercel env vars must be set with `printf '%s'` (not `echo`) to avoid trailing newlines
 
 ## Testing
 
