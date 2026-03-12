@@ -1,6 +1,6 @@
 # Zoe the Robot
 
-A family AI assistant that lives in your Telegram private chat. Zoe remembers things, manages shopping lists, and keeps track of what matters to your family — all through natural conversation.
+A family AI assistant that lives in your Telegram private chat. Zoe remembers things, manages shopping lists, handles calendar events, and keeps track of what matters to your family — all through natural conversation.
 
 **Try it:** [@zoe_the_robot](https://t.me/zoe_the_robot)
 
@@ -11,16 +11,20 @@ You (Telegram) → Vercel serverless → Claude Sonnet → Vercel → You (Teleg
                                         ↕
                                    Upstash Redis
                                 (memory, history, registry)
+                                        ↕
+                                 Google Calendar
+                              (per-member OAuth2)
 ```
 
 Whitelisted family members send messages (text or photos) to Zoe via Telegram. Each message is processed by a Claude agent that can read/write persistent memory, manage calendar events, and maintain conversation history — then replies in plain text.
 
 ## Features
 
-- **Persistent memory** — Zoe remembers things across conversations (shopping lists, preferences, notes)
+- **Persistent memory** — remembers things across conversations (shopping lists, preferences, notes)
 - **Per-member context** — each family member gets their own conversation history and personal notes
 - **Image understanding** — send photos and Zoe will interpret them (receipts, invites, etc.)
-- **Calendar management** — create, list, and manage family calendar events *(Google Calendar setup required)*
+- **Calendar management** — full CRUD on Google Calendar (list, create, recurring, delete, find free time)
+- **OAuth2 flow** — each family member connects their own Google account
 - **Audit trail** — all interactions are logged for transparency
 - **Admin controls** — add/remove family members, manage the registry
 
@@ -28,21 +32,22 @@ Whitelisted family members send messages (text or photos) to Zoe via Telegram. E
 
 | Layer | Technology |
 |-------|-----------|
-| Runtime | Node.js 20+, TypeScript |
+| Runtime | Node.js 22, TypeScript |
 | Hosting | Vercel Serverless Functions |
 | AI | Anthropic Claude Sonnet 4 (with Vision) |
 | Messaging | Telegram Bot API |
 | Storage | Upstash Redis (REST) |
-| Calendar | Google Calendar API v3 (OAuth2) |
+| Calendar | Google Calendar API v3 (OAuth2, per-member) |
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - A [Telegram bot](https://core.telegram.org/bots#botfather) token
 - An [Upstash Redis](https://upstash.com) database
 - An [Anthropic API](https://console.anthropic.com) key
+- *(Optional)* Google Cloud OAuth2 credentials for calendar features
 
 ### Setup
 
@@ -56,6 +61,9 @@ npm install
 cp .env.example .env
 # Edit .env with your credentials
 
+# Bootstrap your first family member
+npm run bootstrap -- --chatid=<your-chat-id> --name=<your-name> --timezone=<your-tz>
+
 # Run locally
 npx tsx scripts/local-dev.ts
 
@@ -66,10 +74,6 @@ cloudflared tunnel --url http://localhost:3000
 curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
   -H "Content-Type: application/json" \
   -d '{"url":"https://<tunnel-url>/api/telegram","secret_token":"<secret>"}'
-
-# Bootstrap your user
-npx tsx -r dotenv/config scripts/bootstrap.ts \
-  --chatid=<your-chat-id> --name=<your-name> --timezone=<your-tz>
 ```
 
 ### Deploy to Vercel
@@ -79,12 +83,13 @@ Push to GitHub and import the repo in [Vercel](https://vercel.com). Add the envi
 ## Project Structure
 
 ```
-api/           Vercel serverless handlers (telegram, health, debug)
-lib/           Core logic (agent, memory, calendar, registry, history, audit)
+api/           Vercel serverless handlers (telegram, health, debug, oauth)
+lib/           Core logic (agent, memory, calendar, registry, history, audit, telegram, datetime)
+lib/debug-*    Debug UI (auth, api, dispatch, html, panels)
 twins/         Digital twins — stateful test doubles for Redis, Telegram, Calendar
 tools/         Claude tool definitions (schemas)
 scripts/       Bootstrap + local dev server
-tests/         Integration scenario tests
+tests/         Integration scenario tests (19 suites, 258 tests)
 docs/          RFC, Gherkin spec, ADRs, conventions
 ```
 
@@ -93,7 +98,7 @@ docs/          RFC, Gherkin spec, ADRs, conventions
 ```bash
 npm run typecheck    # Type checking
 npm run lint         # Linting
-npm test             # 256 tests via Vitest
+npm test             # 258 tests via Vitest
 ```
 
 All external dependencies are abstracted behind interfaces and tested using [digital twins](docs/adr/001-digital-twins-over-mocks.md) — stateful behavioural clones that replicate real service semantics without network calls.
