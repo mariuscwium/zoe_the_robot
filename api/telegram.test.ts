@@ -60,9 +60,12 @@ function createMockRes(): VercelResponse & { statusCode: number; body: unknown }
   return res as unknown as VercelResponse & { statusCode: number; body: unknown };
 }
 
+let nextMessageId = 1;
+
 function makeUpdate(text: string, chatType = "private") {
   return {
     message: {
+      message_id: nextMessageId++,
       chat: { id: CHAT_ID, type: chatType },
       text,
     },
@@ -72,6 +75,7 @@ function makeUpdate(text: string, chatType = "private") {
 function makePhotoUpdate() {
   return {
     message: {
+      message_id: nextMessageId++,
       chat: { id: CHAT_ID, type: "private" },
       text: "What is this?",
       photo: [
@@ -106,6 +110,7 @@ describe("POST /api/telegram", () => {
 
   beforeEach(() => {
     ctx = setup();
+    nextMessageId = 1;
   });
 
   it("returns 405 for non-POST requests", async () => {
@@ -185,5 +190,20 @@ describe("POST /api/telegram", () => {
       );
       expect(imageBlock).toBeDefined();
     }
+  });
+
+  it("deduplicates retried webhook with same message_id", async () => {
+    await upsertMember(ctx.deps, makeMember());
+    const headers = { [SECRET_HEADER]: WEBHOOK_SECRET };
+    const update = makeUpdate("Hello");
+    const req1 = createMockReq(update, headers);
+    const req2 = createMockReq(update, headers);
+    const res1 = createMockRes();
+    const res2 = createMockRes();
+    await ctx.handler(req1, res1);
+    await ctx.handler(req2, res2);
+    expect(res1.statusCode).toBe(200);
+    expect(res2.statusCode).toBe(200);
+    expect(ctx.telegram.getOutbox()).toHaveLength(1);
   });
 });

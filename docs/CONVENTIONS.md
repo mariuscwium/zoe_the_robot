@@ -21,6 +21,7 @@
 - `debug:lockout:<ip>` — debug UI login lockout state
 - `oauth:google:<memberId>` — Google Calendar refresh token per member
 - `oauth:state:<uuid>` — CSRF state for OAuth2 consent flow (SETEX 600s TTL)
+- `dedup:<chatId>:<messageId>` — webhook idempotency key (SET NX EX 300)
 
 ## Identity & Privacy
 
@@ -32,6 +33,7 @@
 
 - Group chats silently rejected (`chat.type !== "private"` → HTTP 200, no reply, no log)
 - Unknown chat IDs logged to audit as `rejected_unknown_chat` with the chat ID for easy whitelisting
+- Webhook deduplication via `SET dedup:<chatId>:<messageId> 1 NX EX 300` — prevents Telegram retry double-processing
 - Replies are plain text only — no markdown formatting sent to Telegram users
 
 ## Agent

@@ -25,6 +25,7 @@ interface TelegramPhoto {
 
 interface TelegramUpdate {
   message?: {
+    message_id: number;
     chat: { id: number; type: string };
     text?: string;
     caption?: string;
@@ -61,6 +62,11 @@ async function handleUpdate(
     return;
   }
   const chatId = message.chat.id;
+  const isDuplicate = await claimMessage(deps, chatId, message.message_id);
+  if (isDuplicate) {
+    res.status(200).json({ ok: true });
+    return;
+  }
   const member = await getMember(deps, chatId);
   if (member === null) {
     await appendAudit(deps, {
@@ -110,6 +116,16 @@ async function processMessage(
   await appendMessage(deps, chatId, { role: "assistant", content: reply, timestamp: now });
   await logIncoming(deps, member.id, userText, message.photo);
   await sendReply(deps, chatId, reply);
+}
+
+async function claimMessage(
+  deps: Deps,
+  chatId: number,
+  messageId: number,
+): Promise<boolean> {
+  const key = `dedup:${String(chatId)}:${String(messageId)}`;
+  const res = await deps.redis.execute(["SET", key, "1", "NX", "EX", "300"]);
+  return res.result === null;
 }
 
 async function extractImage(

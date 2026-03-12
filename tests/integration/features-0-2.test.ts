@@ -109,9 +109,12 @@ function createMockRes(): VercelResponse & { statusCode: number; body: unknown }
 
 // --- Update builders ---
 
+let nextMessageId = 1;
+
 function makeUpdate(text: string, chatId = CHAT_ID, chatType = "private") {
   return {
     message: {
+      message_id: nextMessageId++,
       chat: { id: chatId, type: chatType },
       text,
     },
@@ -121,6 +124,7 @@ function makeUpdate(text: string, chatId = CHAT_ID, chatType = "private") {
 function makePhotoUpdate(chatId = CHAT_ID, caption?: string) {
   return {
     message: {
+      message_id: nextMessageId++,
       chat: { id: chatId, type: "private" },
       text: caption,
       photo: [
@@ -173,6 +177,7 @@ describe("Feature 0 — Registry", () => {
 
   beforeEach(() => {
     ctx = setup();
+    nextMessageId = 1;
   });
 
   it("bootstrap adds member, subsequent messages work", async () => {
