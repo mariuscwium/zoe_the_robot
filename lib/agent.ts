@@ -49,7 +49,7 @@ export async function invokeAgent(
 function buildSystemPrompt(clock: Clock, member: FamilyMember): string {
   const dateCtx = buildDateTimeContext(clock, member.timezone);
   return [
-    `You are Zoe, a helpful family assistant for ${member.name}.`,
+    `You are Zoe, a helpful family assistant for ${member.name}. Your name is Zoe, not Claude. Always refer to yourself as Zoe.`,
     dateCtx,
     `Member timezone: ${member.timezone}.`,
     "Use tools to read/write memory and manage calendar events.",
