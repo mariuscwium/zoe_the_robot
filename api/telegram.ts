@@ -27,6 +27,7 @@ interface TelegramUpdate {
   message?: {
     chat: { id: number; type: string };
     text?: string;
+    caption?: string;
     photo?: TelegramPhoto[];
   };
 }
@@ -92,7 +93,7 @@ async function processMessage(
   member: FamilyMember,
   message: NonNullable<TelegramUpdate["message"]>,
 ): Promise<void> {
-  const userText = message.text ?? "";
+  const userText = message.text ?? message.caption ?? "";
   const imageDataUri = await extractImage(deps, message.photo);
   const history = await loadHistory(deps, chatId);
   const reply = await invokeAgent(deps, {

@@ -339,6 +339,38 @@ describe("Feature 1 — Webhook Ingestion", () => {
     expect(photoEntry.messageType).toBe("photo");
   });
 
+  it("photo with no caption sends image block without empty text block", async () => {
+    const ctx = setup([textResponse("I see an image.")]);
+    await upsertMember(ctx.deps, testMember);
+
+    const imageBytes = Buffer.from("fake-jpeg-no-caption");
+    ctx.telegram.injectFile("large_id", "photos/large.jpg", imageBytes);
+
+    const req = createMockReq(makePhotoUpdate(CHAT_ID), {
+      [SECRET_HEADER]: WEBHOOK_SECRET,
+    });
+    const res = createMockRes();
+    await ctx.handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(ctx.claude.invoked).toBe(true);
+
+    const params = ctx.claude.receivedParams[0];
+    expect(params).toBeDefined();
+    if (params === undefined) return;
+    const lastMsg = params.messages[params.messages.length - 1];
+    expect(lastMsg).toBeDefined();
+    if (lastMsg === undefined) return;
+
+    const blocks = lastMsg.content as ClaudeContentBlock[];
+    const imageBlock = blocks.find((b) => b.type === "image");
+    expect(imageBlock).toBeDefined();
+
+    // No empty text block should be present
+    const textBlock = blocks.find((b) => b.type === "text");
+    expect(textBlock).toBeUndefined();
+  });
+
   it("webhook secret missing returns 403", async () => {
     const ctx = setup();
     const req = createMockReq(makeUpdate("hello"), {});

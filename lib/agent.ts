@@ -76,7 +76,7 @@ function buildUserContent(
   if (params.imageBase64 === undefined) {
     return params.userMessage;
   }
-  return [
+  const blocks: ClaudeContentBlock[] = [
     {
       type: "image",
       source: {
@@ -85,8 +85,11 @@ function buildUserContent(
         data: params.imageBase64,
       },
     },
-    { type: "text", text: params.userMessage },
   ];
+  if (params.userMessage !== "") {
+    blocks.push({ type: "text", text: params.userMessage });
+  }
+  return blocks;
 }
 
 async function runToolLoop(
