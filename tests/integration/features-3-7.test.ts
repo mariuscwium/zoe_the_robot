@@ -254,14 +254,14 @@ describe("Feature 4 — Agent & Tools", () => {
       key: "family/todos",
     });
     const ninthResponse = textResponse("This should never be reached");
-    const responses = Array.from({ length: 8 }, () => looping);
+    const responses = Array.from({ length: 16 }, () => looping);
     responses.push(ninthResponse);
     const claude = new StubClaude(responses);
     const ctx = setup(claude);
 
     const result = await invokeAgent(ctx.agentDeps, makeParams());
     expect(result).toContain("thinking too long");
-    expect(claude.receivedParams).toHaveLength(8);
+    expect(claude.receivedParams).toHaveLength(16);
   });
 
   it("mutating tool call triggers audit log entry", async () => {

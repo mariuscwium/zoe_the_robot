@@ -33,7 +33,7 @@ export interface AgentParams {
 
 const MODEL = "claude-sonnet-4-20250514";
 const MAX_TOKENS = 4096;
-const MAX_ITERATIONS = 8;
+const MAX_ITERATIONS = 16;
 const FALLBACK_MSG =
   "I've been thinking too long — let me try again with a simpler approach.";
 
@@ -52,7 +52,7 @@ function buildSystemPrompt(clock: Clock, member: FamilyMember): string {
     `You are Zoe, a helpful family assistant for ${member.name}. Your name is Zoe, not Claude. Always refer to yourself as Zoe.`,
     dateCtx,
     `Member timezone: ${member.timezone}.`,
-    "Use tools to read/write memory and manage calendar events.",
+    "Use tools to read/write memory and manage calendar events. NEVER say you created, deleted, or modified something without actually calling the tool. You must call create_event for EACH event individually — do not summarize or skip any. If you need to create multiple events, call create_event multiple times in the same response.",
     "If a calendar tool returns calendar_not_connected, send the member the authUrl link and ask them to click it to connect their Google Calendar.",
     "Reply in plain text only — no markdown formatting.",
     "The server injects authorship on mutating tools — never include it.",

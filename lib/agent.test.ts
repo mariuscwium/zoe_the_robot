@@ -191,7 +191,7 @@ describe("invokeAgent", () => {
 
   it("returns fallback when max iterations reached", async () => {
     const looping = toolUseResponse("read_memory", { key: "family/todos" });
-    const responses = Array.from({ length: 8 }, () => looping);
+    const responses = Array.from({ length: 16 }, () => looping);
     const claude = new StubClaude(responses);
     const { deps } = makeDeps(claude);
     const result = await invokeAgent(deps, makeParams());

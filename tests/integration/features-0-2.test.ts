@@ -467,8 +467,8 @@ describe("Feature 2 — Image Ingestion & Autonomous Action", () => {
   });
 
   it("max tool calls reached returns fallback message", async () => {
-    // Create 8 tool_use responses that never end — agent hits MAX_ITERATIONS
-    const loopingResponses = Array.from({ length: 8 }, (_, i) =>
+    // Create 16 tool_use responses that never end — agent hits MAX_ITERATIONS
+    const loopingResponses = Array.from({ length: 16 }, (_, i) =>
       toolUseResponse("read_memory", { key: "family/todos" }, `call_${String(i + 1)}`),
     );
 
@@ -483,8 +483,8 @@ describe("Feature 2 — Image Ingestion & Autonomous Action", () => {
 
     expect(res.statusCode).toBe(200);
 
-    // Agent was called 8 times (max iterations)
-    expect(ctx.claude.receivedParams).toHaveLength(8);
+    // Agent was called 16 times (max iterations)
+    expect(ctx.claude.receivedParams).toHaveLength(16);
 
     // Fallback message sent to user
     const outbox = ctx.telegram.getOutbox();
