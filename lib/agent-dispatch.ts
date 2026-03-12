@@ -140,9 +140,8 @@ async function routeCalendarTool(
   if (!CALENDAR_TOOLS.has(name)) return null;
   const client = await deps.calendar.getClient(member.id);
   if (client === null) {
-    const base = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : (process.env.WEBHOOK_URL ?? "").replace(/\/api\/telegram$/, "");
+    const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI ?? "";
+    const base = redirectUri.replace(/\/api\/oauth\/google\/callback$/, "");
     return { success: false, error: "calendar_not_connected", data: { authUrl: `${base}/api/oauth/google?member=${member.id}` } };
   }
   const cd = { calendar: client, clock: deps.clock };
