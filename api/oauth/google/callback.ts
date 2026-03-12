@@ -62,7 +62,7 @@ export default async function handler(
 
   const tokens = await exchangeCode(clientId, clientSecret, code, redirectUri);
   if (!tokens.refresh_token) {
-    res.status(400).json({ error: "No refresh token returned — try revoking and re-authorizing" });
+    res.status(400).json({ error: "No refresh token returned", debug: tokens });
     return;
   }
 
