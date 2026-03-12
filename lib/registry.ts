@@ -51,6 +51,14 @@ export async function getMember(
   return found ?? null;
 }
 
+export async function getMemberById(
+  deps: RegistryDeps,
+  memberId: string,
+): Promise<FamilyMember | null> {
+  const map = await loadRegistry(deps);
+  return map[memberId] ?? null;
+}
+
 export async function getAllMembers(
   deps: RegistryDeps,
 ): Promise<FamilyMember[]> {

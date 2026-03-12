@@ -3,7 +3,7 @@
  * Separated from agent.ts to stay within line limits.
  */
 
-import type { RedisClient, CalendarClient, Clock } from "./deps.js";
+import type { RedisClient, CalendarClient, CalendarProvider, Clock } from "./deps.js";
 import type { FamilyMember, ToolResult } from "./types.js";
 import {
   readMemory,
@@ -23,7 +23,7 @@ import { appendAudit } from "./audit.js";
 
 export interface DispatchDeps {
   redis: RedisClient;
-  calendar: CalendarClient;
+  calendar: CalendarProvider;
   clock: Clock;
 }
 
@@ -44,7 +44,7 @@ export async function dispatchTool(
   name: string,
   input: ToolInput,
 ): Promise<ToolResult> {
-  const result = await executeToolCall(deps, member.timezone, name, input);
+  const result = await executeToolCall(deps, member, name, input);
   if (MUTATING_TOOLS.has(name)) {
     await auditMutation(deps, member, name, input);
   }
@@ -53,12 +53,12 @@ export async function dispatchTool(
 
 async function executeToolCall(
   deps: DispatchDeps,
-  timezone: string,
+  member: FamilyMember,
   name: string,
   input: ToolInput,
 ): Promise<ToolResult> {
   try {
-    return await routeToolCall(deps, timezone, name, input);
+    return await routeToolCall(deps, member, name, input);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { success: false, error: msg };
@@ -85,14 +85,14 @@ function optNum(input: ToolInput, key: string): number | undefined {
 
 async function routeToolCall(
   deps: DispatchDeps,
-  tz: string,
+  member: FamilyMember,
   name: string,
   input: ToolInput,
 ): Promise<ToolResult> {
   const memoryResult = await routeMemoryTool(deps, name, input);
   if (memoryResult !== null) return memoryResult;
 
-  const calendarResult = await routeCalendarTool(deps, tz, name, input);
+  const calendarResult = await routeCalendarTool(deps, member, name, input);
   if (calendarResult !== null) return calendarResult;
 
   if (name === "confirm_action") {
@@ -129,60 +129,53 @@ async function routeMemoryTool(
   }
 }
 
+const CALENDAR_TOOLS = new Set([
+  "list_events", "create_event", "create_recurring_event",
+  "delete_calendar_event", "find_events",
+]);
+
 async function routeCalendarTool(
-  deps: DispatchDeps,
-  tz: string,
-  name: string,
-  input: ToolInput,
+  deps: DispatchDeps, member: FamilyMember, name: string, input: ToolInput,
 ): Promise<ToolResult | null> {
+  if (!CALENDAR_TOOLS.has(name)) return null;
+  const client = await deps.calendar.getClient(member.id);
+  if (client === null) {
+    const base = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : (process.env.WEBHOOK_URL ?? "").replace(/\/api\/telegram$/, "");
+    return { success: false, error: "calendar_not_connected", data: { authUrl: `${base}/api/oauth/google?member=${member.id}` } };
+  }
+  const cd = { calendar: client, clock: deps.clock };
+  const tz = member.timezone;
   switch (name) {
     case "list_events":
-      return listUpcomingEvents(deps, {
-        daysAhead: optNum(input, "days_ahead"),
-        query: optStr(input, "query"),
-        timezone: tz,
-      });
+      return listUpcomingEvents(cd, { daysAhead: optNum(input, "days_ahead"), query: optStr(input, "query"), timezone: tz });
     case "create_event":
-      return createEventFromInput(deps, input, tz);
+      return createEventFromInput(cd, input, tz);
     case "create_recurring_event":
-      return createRecurringEvent(deps, {
-        summary: str(input, "summary"),
-        startTime: str(input, "start_time"),
-        endTime: str(input, "end_time"),
-        recurrence: str(input, "recurrence"),
-        description: optStr(input, "description"),
-        location: optStr(input, "location"),
-        timezone: tz,
+      return createRecurringEvent(cd, {
+        summary: str(input, "summary"), startTime: str(input, "start_time"),
+        endTime: str(input, "end_time"), recurrence: str(input, "recurrence"),
+        description: optStr(input, "description"), location: optStr(input, "location"), timezone: tz,
       });
     case "delete_calendar_event":
-      return deleteEvent(deps, { eventId: str(input, "event_id") });
+      return deleteEvent(cd, { eventId: str(input, "event_id") });
     case "find_events":
-      return findEvents(deps, {
-        query: str(input, "query"),
-        daysAhead: optNum(input, "days_ahead"),
-        timezone: tz,
-      });
+      return findEvents(cd, { query: str(input, "query"), daysAhead: optNum(input, "days_ahead"), timezone: tz });
     default:
       return null;
   }
 }
 
 async function createEventFromInput(
-  deps: DispatchDeps,
-  input: ToolInput,
-  tz: string,
+  deps: { calendar: CalendarClient; clock: Clock }, input: ToolInput, tz: string,
 ): Promise<ToolResult> {
   const reminders = Array.isArray(input.reminders)
-    ? (input.reminders as { method: string; minutes: number }[])
-    : undefined;
+    ? (input.reminders as { method: string; minutes: number }[]) : undefined;
   return createEvent(deps, {
-    summary: str(input, "summary"),
-    startTime: str(input, "start_time"),
-    endTime: str(input, "end_time"),
-    description: optStr(input, "description"),
-    location: optStr(input, "location"),
-    timezone: tz,
-    reminders,
+    summary: str(input, "summary"), startTime: str(input, "start_time"),
+    endTime: str(input, "end_time"), description: optStr(input, "description"),
+    location: optStr(input, "location"), timezone: tz, reminders,
   });
 }
 

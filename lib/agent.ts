@@ -5,7 +5,7 @@
 
 import type {
   ClaudeClient,
-  CalendarClient,
+  CalendarProvider,
   RedisClient,
   Clock,
   ClaudeContentBlock,
@@ -20,7 +20,7 @@ import { dispatchTool } from "./agent-dispatch.js";
 export interface AgentDeps {
   claude: ClaudeClient;
   redis: RedisClient;
-  calendar: CalendarClient;
+  calendar: CalendarProvider;
   clock: Clock;
 }
 
@@ -53,6 +53,7 @@ function buildSystemPrompt(clock: Clock, member: FamilyMember): string {
     dateCtx,
     `Member timezone: ${member.timezone}.`,
     "Use tools to read/write memory and manage calendar events.",
+    "If a calendar tool returns calendar_not_connected, send the member the authUrl link and ask them to click it to connect their Google Calendar.",
     "Reply in plain text only — no markdown formatting.",
     "The server injects authorship on mutating tools — never include it.",
   ].join("\n");

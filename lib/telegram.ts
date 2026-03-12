@@ -75,7 +75,7 @@ export async function downloadImage(
 
     const buffer = await deps.telegram.downloadFile(fileResult.result.file_path);
     const base64 = buffer.toString("base64");
-    return `data:image/jpeg;base64,${base64}`;
+    return base64;
   } catch {
     return null;
   }

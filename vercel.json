@@ -5,6 +5,8 @@
   "functions": {
     "api/telegram.ts": { "maxDuration": 60 },
     "api/health.ts": { "maxDuration": 10 },
-    "api/debug.ts": { "maxDuration": 10 }
+    "api/debug.ts": { "maxDuration": 10 },
+    "api/oauth/google.ts": { "maxDuration": 10 },
+    "api/oauth/google/callback.ts": { "maxDuration": 10 }
   }
 }

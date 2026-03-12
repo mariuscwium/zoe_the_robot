@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { RedisTwin } from "../../twins/redis.js";
 import { CalendarTwin } from "../../twins/calendar.js";
+import { CalendarProviderTwin } from "../../twins/calendar-provider.js";
 import { invokeAgent } from "../../lib/agent.js";
 import type { AgentDeps, AgentParams } from "../../lib/agent.js";
 import { loadHistory, saveHistory } from "../../lib/history.js";
@@ -94,12 +95,26 @@ const testMember: FamilyMember = {
 
 const clock: Clock = { now: () => new Date("2026-03-10T12:00:00Z") };
 
-function makeDeps(claude: StubClaude): AgentDeps {
+interface TestContext {
+  agentDeps: AgentDeps;
+  calendarTwin: CalendarTwin;
+  redis: RedisTwin;
+  claude: StubClaude;
+}
+
+function setup(claude: StubClaude): TestContext {
+  const calendarTwin = new CalendarTwin();
+  const redis = new RedisTwin(clock);
   return {
+    agentDeps: {
+      claude,
+      redis,
+      calendar: new CalendarProviderTwin(calendarTwin),
+      clock,
+    },
+    calendarTwin,
+    redis,
     claude,
-    redis: new RedisTwin(clock),
-    calendar: new CalendarTwin(),
-    clock,
   };
 }
 
@@ -158,7 +173,7 @@ describe("Feature 3 — Conversation History", () => {
 
 describe("Feature 4 — Agent & Tools", () => {
   it("creates a calendar event with reminders", async () => {
-    const claude = new StubClaude([
+    const ctx = setup(new StubClaude([
       toolUseResponse("create_event", {
         summary: "Call accountant",
         start_time: "2026-03-12T10:00:00+13:00",
@@ -166,14 +181,12 @@ describe("Feature 4 — Agent & Tools", () => {
         reminders: [{ method: "popup", minutes: 0 }],
       }),
       textResponse("Created: Call accountant on Thursday at 10am."),
-    ]);
-    const deps = makeDeps(claude);
-    const result = await invokeAgent(deps, makeParams());
+    ]));
+    const result = await invokeAgent(ctx.agentDeps, makeParams());
 
     expect(result).toContain("Call accountant");
 
-    // Verify event was actually created in the calendar twin
-    const events = await deps.calendar.listEvents({
+    const events = await ctx.calendarTwin.listEvents({
       timeMin: "2026-03-01T00:00:00Z",
       timeMax: "2026-03-31T00:00:00Z",
     });
@@ -187,7 +200,7 @@ describe("Feature 4 — Agent & Tools", () => {
   });
 
   it("creates a recurring event", async () => {
-    const claude = new StubClaude([
+    const ctx = setup(new StubClaude([
       toolUseResponse("create_recurring_event", {
         summary: "Take medication",
         start_time: "2026-03-10T08:00:00+13:00",
@@ -195,51 +208,44 @@ describe("Feature 4 — Agent & Tools", () => {
         recurrence: "RRULE:FREQ=DAILY",
       }),
       textResponse("Created daily medication reminder."),
-    ]);
-    const deps = makeDeps(claude);
-    const result = await invokeAgent(deps, makeParams());
+    ]));
+    const result = await invokeAgent(ctx.agentDeps, makeParams());
 
     expect(result).toContain("medication");
 
-    const events = await deps.calendar.listEvents({
+    const events = await ctx.calendarTwin.listEvents({
       timeMin: "2026-03-01T00:00:00Z",
       timeMax: "2026-03-31T00:00:00Z",
     });
-    // The base recurring event exists
-    const base = events.items.find((e) => e.summary === "Take medication");
+    const base = events.items.find((e: CalendarEvent) => e.summary === "Take medication");
     expect(base).toBeDefined();
     expect(base?.recurrence).toEqual(["RRULE:FREQ=DAILY"]);
   });
 
   it("deletes a calendar event", async () => {
-    const deps = makeDeps(
-      new StubClaude([]), // placeholder, replaced below
-    );
+    const ctx = setup(new StubClaude([]));
 
-    // Pre-create an event in the twin
-    const created = await deps.calendar.insertEvent({
+    const created = await ctx.calendarTwin.insertEvent({
       summary: "Dentist",
       start: { dateTime: "2026-03-13T14:00:00+13:00" },
       end: { dateTime: "2026-03-13T15:00:00+13:00" },
     });
 
-    const claude = new StubClaude([
+    ctx.agentDeps.claude = new StubClaude([
       toolUseResponse("delete_calendar_event", {
         event_id: created.id,
       }),
       textResponse("Dentist appointment deleted."),
     ]);
-    deps.claude = claude;
 
-    const result = await invokeAgent(deps, makeParams());
+    const result = await invokeAgent(ctx.agentDeps, makeParams());
     expect(result).toContain("deleted");
 
-    // Verify event is gone
-    const events = await deps.calendar.listEvents({
+    const events = await ctx.calendarTwin.listEvents({
       timeMin: "2026-03-01T00:00:00Z",
       timeMax: "2026-03-31T00:00:00Z",
     });
-    const dentist = events.items.find((e) => e.summary === "Dentist");
+    const dentist = events.items.find((e: CalendarEvent) => e.summary === "Dentist");
     expect(dentist).toBeUndefined();
   });
 
@@ -247,31 +253,28 @@ describe("Feature 4 — Agent & Tools", () => {
     const looping = toolUseResponse("read_memory", {
       key: "family/todos",
     });
-    // 9 responses: the agent should stop after 8 iterations and never reach the 9th
     const ninthResponse = textResponse("This should never be reached");
     const responses = Array.from({ length: 8 }, () => looping);
     responses.push(ninthResponse);
     const claude = new StubClaude(responses);
-    const deps = makeDeps(claude);
+    const ctx = setup(claude);
 
-    const result = await invokeAgent(deps, makeParams());
+    const result = await invokeAgent(ctx.agentDeps, makeParams());
     expect(result).toContain("thinking too long");
-    // Should have called Claude exactly 8 times (the max)
     expect(claude.receivedParams).toHaveLength(8);
   });
 
   it("mutating tool call triggers audit log entry", async () => {
-    const claude = new StubClaude([
+    const ctx = setup(new StubClaude([
       toolUseResponse("write_memory", {
         key: "family/todos",
         content: "- Buy milk",
       }),
       textResponse("Saved your todo."),
-    ]);
-    const deps = makeDeps(claude);
-    await invokeAgent(deps, makeParams());
+    ]));
+    await invokeAgent(ctx.agentDeps, makeParams());
 
-    const auditEntries = await getAuditLog({ redis: deps.redis });
+    const auditEntries = await getAuditLog({ redis: ctx.redis });
     expect(auditEntries).toHaveLength(1);
     expect(auditEntries[0]?.action).toBe("write_memory");
     expect(auditEntries[0]?.memberId).toBe("marius");
@@ -282,46 +285,41 @@ describe("Feature 4 — Agent & Tools", () => {
 
 describe("Feature 5 — Memory", () => {
   it("writes and reads memory via agent", async () => {
-    const claude = new StubClaude([
+    const ctx = setup(new StubClaude([
       toolUseResponse("write_memory", {
         key: "family/todos",
         content: "- Buy milk\n- Walk dog",
       }),
       toolUseResponse("read_memory", { key: "family/todos" }),
       textResponse("Your todos: Buy milk, Walk dog"),
-    ]);
-    const deps = makeDeps(claude);
-    const result = await invokeAgent(deps, makeParams());
+    ]));
+    const result = await invokeAgent(ctx.agentDeps, makeParams());
 
     expect(result).toContain("todos");
 
-    // Verify data persisted in Redis twin
-    const stored = await readMemory({ redis: deps.redis }, "family/todos");
+    const stored = await readMemory({ redis: ctx.redis }, "family/todos");
     expect(stored).toBe("- Buy milk\n- Walk dog");
   });
 
   it("lists memory keys with pattern matching", async () => {
-    const deps = makeDeps(new StubClaude([]));
+    const ctx = setup(new StubClaude([]));
 
-    // Pre-populate memory
-    await deps.redis.execute(["SET", "memory:family:todos", "items"]);
-    await deps.redis.execute(["SET", "memory:family:shopping", "list"]);
-    await deps.redis.execute(["SET", "memory:members:marius:notes", "note"]);
+    await ctx.redis.execute(["SET", "memory:family:todos", "items"]);
+    await ctx.redis.execute(["SET", "memory:family:shopping", "list"]);
+    await ctx.redis.execute(["SET", "memory:members:marius:notes", "note"]);
 
-    const claude = new StubClaude([
+    ctx.agentDeps.claude = new StubClaude([
       toolUseResponse("list_memory_keys", {
         pattern: "memory:family:*",
       }),
       textResponse("Found 2 family documents."),
     ]);
-    deps.claude = claude;
 
-    const result = await invokeAgent(deps, makeParams());
+    const result = await invokeAgent(ctx.agentDeps, makeParams());
     expect(result).toContain("2");
 
-    // Verify the tool received matching keys
     const keys = await listMemoryKeys(
-      { redis: deps.redis },
+      { redis: ctx.redis },
       "memory:family:*",
     );
     expect(keys).toContain("memory:family:todos");
@@ -330,62 +328,56 @@ describe("Feature 5 — Memory", () => {
   });
 
   it("appends to memory document", async () => {
-    const deps = makeDeps(new StubClaude([]));
+    const ctx = setup(new StubClaude([]));
 
-    // Pre-populate
-    await deps.redis.execute([
+    await ctx.redis.execute([
       "SET",
       "family/shopping",
       "- Eggs\n",
     ]);
 
-    const claude = new StubClaude([
+    ctx.agentDeps.claude = new StubClaude([
       toolUseResponse("append_memory", {
         key: "family/shopping",
         content: "- Bread\n",
       }),
       textResponse("Added bread to shopping list."),
     ]);
-    deps.claude = claude;
 
-    const result = await invokeAgent(deps, makeParams());
+    const result = await invokeAgent(ctx.agentDeps, makeParams());
     expect(result).toContain("bread");
 
     const stored = await readMemory(
-      { redis: deps.redis },
+      { redis: ctx.redis },
       "family/shopping",
     );
     expect(stored).toBe("- Eggs\n- Bread\n");
   });
 
   it("deletes memory with audit logging", async () => {
-    const deps = makeDeps(new StubClaude([]));
+    const ctx = setup(new StubClaude([]));
 
-    // Pre-populate
-    await deps.redis.execute([
+    await ctx.redis.execute([
       "SET",
       "family/old-notes",
       "Some old content",
     ]);
 
-    const claude = new StubClaude([
+    ctx.agentDeps.claude = new StubClaude([
       toolUseResponse("delete_memory", { key: "family/old-notes" }),
       textResponse("Old notes deleted."),
     ]);
-    deps.claude = claude;
 
-    const result = await invokeAgent(deps, makeParams());
+    const result = await invokeAgent(ctx.agentDeps, makeParams());
     expect(result).toContain("deleted");
 
-    // Key should be gone
     const stored = await readMemory(
-      { redis: deps.redis },
+      { redis: ctx.redis },
       "family/old-notes",
     );
     expect(stored).toBeNull();
 
-    // Audit log should record the deletion
-    const auditEntries = await getAuditLog({ redis: deps.redis });
+    const auditEntries = await getAuditLog({ redis: ctx.redis });
     expect(auditEntries).toHaveLength(1);
     expect(auditEntries[0]?.action).toBe("delete_memory");
   });
@@ -395,7 +387,7 @@ describe("Feature 5 — Memory", () => {
 
 describe("Feature 6 — Calendar", () => {
   it("calendar event preserves reminders.overrides", async () => {
-    const claude = new StubClaude([
+    const ctx = setup(new StubClaude([
       toolUseResponse("create_event", {
         summary: "Standup",
         start_time: "2026-03-11T09:00:00+13:00",
@@ -406,36 +398,33 @@ describe("Feature 6 — Calendar", () => {
         ],
       }),
       textResponse("Created standup with reminders."),
-    ]);
-    const deps = makeDeps(claude);
-    await invokeAgent(deps, makeParams());
+    ]));
+    await invokeAgent(ctx.agentDeps, makeParams());
 
-    const events = await deps.calendar.listEvents({
+    const events = await ctx.calendarTwin.listEvents({
       timeMin: "2026-03-01T00:00:00Z",
       timeMax: "2026-03-31T00:00:00Z",
     });
-    const standup = events.items.find((e) => e.summary === "Standup");
+    const standup = events.items.find((e: CalendarEvent) => e.summary === "Standup");
     expect(standup).toBeDefined();
     assertReminders(standup);
   });
 
   it("time filtering works with timezone-aware events", async () => {
-    const deps = makeDeps(new StubClaude([]));
+    const ctx = setup(new StubClaude([]));
 
-    // Insert events at different times
-    await deps.calendar.insertEvent({
+    await ctx.calendarTwin.insertEvent({
       summary: "Past event",
       start: { dateTime: "2026-03-05T10:00:00+13:00" },
       end: { dateTime: "2026-03-05T11:00:00+13:00" },
     });
-    await deps.calendar.insertEvent({
+    await ctx.calendarTwin.insertEvent({
       summary: "Future event",
       start: { dateTime: "2026-03-15T10:00:00+13:00" },
       end: { dateTime: "2026-03-15T11:00:00+13:00" },
     });
 
-    // Query with a window that only includes the future event
-    const events = await deps.calendar.listEvents({
+    const events = await ctx.calendarTwin.listEvents({
       timeMin: "2026-03-10T12:00:00Z",
       timeMax: "2026-03-20T00:00:00Z",
       singleEvents: true,
@@ -451,50 +440,47 @@ describe("Feature 6 — Calendar", () => {
 
 describe("Feature 7 — Audit Log", () => {
   it("write_memory writes to audit log", async () => {
-    const claude = new StubClaude([
+    const ctx = setup(new StubClaude([
       toolUseResponse("write_memory", {
         key: "family/test",
         content: "data",
       }),
       textResponse("Done."),
-    ]);
-    const deps = makeDeps(claude);
-    await invokeAgent(deps, makeParams());
+    ]));
+    await invokeAgent(ctx.agentDeps, makeParams());
 
-    const audit = await getAuditLog({ redis: deps.redis });
+    const audit = await getAuditLog({ redis: ctx.redis });
     expect(audit).toHaveLength(1);
     expect(audit[0]?.action).toBe("write_memory");
   });
 
   it("create_event writes to audit log", async () => {
-    const claude = new StubClaude([
+    const ctx = setup(new StubClaude([
       toolUseResponse("create_event", {
         summary: "Test event",
         start_time: "2026-03-12T10:00:00+13:00",
         end_time: "2026-03-12T11:00:00+13:00",
       }),
       textResponse("Event created."),
-    ]);
-    const deps = makeDeps(claude);
-    await invokeAgent(deps, makeParams());
+    ]));
+    await invokeAgent(ctx.agentDeps, makeParams());
 
-    const audit = await getAuditLog({ redis: deps.redis });
+    const audit = await getAuditLog({ redis: ctx.redis });
     expect(audit).toHaveLength(1);
     expect(audit[0]?.action).toBe("create_event");
   });
 
   it("delete_memory writes to audit log", async () => {
-    const deps = makeDeps(new StubClaude([]));
-    await deps.redis.execute(["SET", "family/todelete", "data"]);
+    const ctx = setup(new StubClaude([]));
+    await ctx.redis.execute(["SET", "family/todelete", "data"]);
 
-    const claude = new StubClaude([
+    ctx.agentDeps.claude = new StubClaude([
       toolUseResponse("delete_memory", { key: "family/todelete" }),
       textResponse("Deleted."),
     ]);
-    deps.claude = claude;
-    await invokeAgent(deps, makeParams());
+    await invokeAgent(ctx.agentDeps, makeParams());
 
-    const audit = await getAuditLog({ redis: deps.redis });
+    const audit = await getAuditLog({ redis: ctx.redis });
     expect(audit).toHaveLength(1);
     expect(audit[0]?.action).toBe("delete_memory");
   });
@@ -509,7 +495,7 @@ describe("Feature 7 — Audit Log", () => {
       isAdmin: false,
     };
 
-    const claude = new StubClaude([
+    const ctx = setup(new StubClaude([
       toolUseResponse("write_memory", {
         key: "family/shopping",
         content: "- Apples",
@@ -519,24 +505,20 @@ describe("Feature 7 — Audit Log", () => {
         content: "\n- Bananas",
       }),
       textResponse("Shopping list updated."),
-    ]);
-    const deps = makeDeps(claude);
+    ]));
     const result = await invokeAgent(
-      deps,
+      ctx.agentDeps,
       makeParams({ member: sarah }),
     );
     expect(result).toContain("Shopping list");
 
-    const auditEntries = await getAuditLog({ redis: deps.redis });
-    // append_memory and write_memory are both mutating
+    const auditEntries = await getAuditLog({ redis: ctx.redis });
     expect(auditEntries).toHaveLength(2);
 
-    // All entries should have Sarah's member ID
     for (const entry of auditEntries) {
       expect(entry.memberId).toBe("sarah");
     }
 
-    // Verify correct actions recorded (LPUSH = newest first)
     const actions = auditEntries.map((e) => e.action);
     expect(actions).toContain("write_memory");
     expect(actions).toContain("append_memory");

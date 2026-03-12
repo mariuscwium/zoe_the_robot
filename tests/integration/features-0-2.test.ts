@@ -17,6 +17,7 @@ import type { FamilyMember } from "../../lib/types.js";
 import { RedisTwin } from "../../twins/redis.js";
 import { TelegramTwin } from "../../twins/telegram.js";
 import { CalendarTwin } from "../../twins/calendar.js";
+import { CalendarProviderTwin } from "../../twins/calendar-provider.js";
 import { createWebhookHandler } from "../../api/telegram.js";
 import { upsertMember, getMember } from "../../lib/registry.js";
 import { runBootstrap } from "../../scripts/bootstrap.js";
@@ -155,11 +156,12 @@ function setup(claudeResponses: ClaudeMessage[] = [textResponse("OK")]): TestCon
   const clock: Clock = { now: () => FIXED_DATE };
   const redis = new RedisTwin(clock);
   const telegram = new TelegramTwin();
-  const calendar = new CalendarTwin();
+  const calendarTwin = new CalendarTwin();
+  const calendar = new CalendarProviderTwin(calendarTwin);
   const claude = new StubClaude(claudeResponses);
   const deps: Deps = { redis, telegram, calendar, claude, clock };
   const handler = createWebhookHandler(deps, { webhookSecret: WEBHOOK_SECRET });
-  return { clock, redis, telegram, calendar, claude, deps, handler };
+  return { clock, redis, telegram, calendar: calendarTwin, claude, deps, handler };
 }
 
 // ─────────────────────────────────────────────

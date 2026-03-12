@@ -149,12 +149,18 @@ export interface Clock {
   now(): Date;
 }
 
+// --- Calendar Provider (per-member OAuth) ---
+
+export interface CalendarProvider {
+  getClient(memberId: string): Promise<CalendarClient | null>;
+}
+
 // --- Combined Deps ---
 
 export interface Deps {
   redis: RedisClient;
   telegram: TelegramClient;
-  calendar: CalendarClient;
+  calendar: CalendarProvider;
   claude: ClaudeClient;
   clock: Clock;
 }

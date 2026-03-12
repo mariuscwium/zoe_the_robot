@@ -7,6 +7,7 @@ import type {
   RedisClient,
   RedisResult,
   CalendarClient,
+  CalendarProvider,
   CalendarEvent,
   CalendarEventInput,
   CalendarEventList,
@@ -57,7 +58,7 @@ class StubRedis implements RedisClient {
   }
 }
 
-class StubCalendar implements CalendarClient {
+class StubCalendarClient implements CalendarClient {
   listEvents(_params: ListEventsParams): Promise<CalendarEventList> {
     return Promise.resolve({ kind: "calendar#events", items: [] });
   }
@@ -91,6 +92,12 @@ class StubCalendar implements CalendarClient {
   }
 }
 
+class StubCalendarProvider implements CalendarProvider {
+  getClient(_memberId: string): Promise<CalendarClient | null> {
+    return Promise.resolve(new StubCalendarClient());
+  }
+}
+
 const FIXED_DATE = new Date("2026-03-10T12:00:00Z");
 const stubClock: Clock = { now: () => FIXED_DATE };
 
@@ -108,7 +115,7 @@ const emptyHistory: ConversationMessage[] = [];
 function makeDeps(claude: StubClaude): { deps: AgentDeps; redis: StubRedis } {
   const redis = new StubRedis();
   return {
-    deps: { claude, redis, calendar: new StubCalendar(), clock: stubClock },
+    deps: { claude, redis, calendar: new StubCalendarProvider(), clock: stubClock },
     redis,
   };
 }

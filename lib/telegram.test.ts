@@ -44,16 +44,14 @@ describe("downloadImage", () => {
     telegram = new TelegramTwin();
   });
 
-  it("returns base64 data URI", async () => {
+  it("returns raw base64 string", async () => {
     const imageBytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
     telegram.injectFile("file123", "photos/test.jpg", imageBytes);
 
     const result = await downloadImage({ telegram }, "file123");
 
     expect(result).not.toBeNull();
-    expect(result).toMatch(/^data:image\/jpeg;base64,/);
-    const base64Part = result?.replace("data:image/jpeg;base64,", "") ?? "";
-    const decoded = Buffer.from(base64Part, "base64");
+    const decoded = Buffer.from(result ?? "", "base64");
     expect(decoded).toEqual(imageBytes);
   });
 

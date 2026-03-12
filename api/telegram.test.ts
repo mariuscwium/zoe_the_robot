@@ -4,6 +4,7 @@ import type { Deps, ClaudeClient, ClaudeMessage, ClaudeMessageParams } from "../
 import { RedisTwin } from "../twins/redis.js";
 import { TelegramTwin } from "../twins/telegram.js";
 import { CalendarTwin } from "../twins/calendar.js";
+import { CalendarProviderTwin } from "../twins/calendar-provider.js";
 import { upsertMember } from "../lib/registry.js";
 import type { FamilyMember } from "../lib/types.js";
 import { createWebhookHandler } from "./telegram.js";
@@ -93,7 +94,7 @@ function setup(): TestContext {
   const clock = { now: () => new Date("2026-03-10T12:00:00Z") };
   const redis = new RedisTwin(clock);
   const telegram = new TelegramTwin();
-  const calendar = new CalendarTwin();
+  const calendar = new CalendarProviderTwin(new CalendarTwin());
   const claude = new StubClaude();
   const deps: Deps = { redis, telegram, calendar, claude, clock };
   const handler = createWebhookHandler(deps, { webhookSecret: WEBHOOK_SECRET });
