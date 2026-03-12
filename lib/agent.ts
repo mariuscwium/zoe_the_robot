@@ -64,6 +64,7 @@ function buildMessages(
 ): ClaudeConversationMessage[] {
   const messages: ClaudeConversationMessage[] = [];
   for (const msg of params.conversationHistory) {
+    if (msg.content === "") continue;
     messages.push({ role: msg.role, content: msg.content });
   }
   messages.push({ role: "user", content: buildUserContent(params) });

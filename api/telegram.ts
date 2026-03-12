@@ -103,7 +103,10 @@ async function processMessage(
     conversationHistory: history,
   });
   const now = deps.clock.now().toISOString();
-  await appendMessage(deps, chatId, { role: "user", content: userText, timestamp: now });
+  const historyText = userText !== "" ? userText : (imageDataUri ? "[Image]" : "");
+  if (historyText !== "") {
+    await appendMessage(deps, chatId, { role: "user", content: historyText, timestamp: now });
+  }
   await appendMessage(deps, chatId, { role: "assistant", content: reply, timestamp: now });
   await logIncoming(deps, member.id, userText, message.photo);
   await sendReply(deps, chatId, reply);
