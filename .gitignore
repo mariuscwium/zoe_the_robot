@@ -7,3 +7,4 @@ logs/
 .vercel
 *.tsbuildinfo
 twins/fixtures/claude/
+evals/results/

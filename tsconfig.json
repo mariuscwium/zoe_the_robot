@@ -28,7 +28,8 @@
     "tools/**/*.ts",
     "twins/**/*.ts",
     "scripts/**/*.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "evals/**/*.ts"
   ],
   "exclude": [
     "node_modules",

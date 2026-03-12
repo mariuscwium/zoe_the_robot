@@ -36,7 +36,7 @@ PII_PATTERNS=(
 )
 
 # Allowlisted PII patterns (example/placeholder values in docs & tests)
-PII_ALLOWLIST='example\.com|111111|222222|@group\.calendar|\.apps\.googleusercontent|i@izs\.me|noreply@|^[0-9]+:index '
+PII_ALLOWLIST='example\.com|111111|222222|@group\.calendar|\.apps\.googleusercontent|i@izs\.me|noreply@|^[0-9]+:index |claude-[a-z]+-[0-9]'
 
 # Build combined regex
 COMBINED=$(printf '%s|' "${PATTERNS[@]}")
