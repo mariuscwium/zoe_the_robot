@@ -73,7 +73,14 @@ async function handleUpdate(
   }
   try {
     await processMessage(deps, chatId, member, message);
-  } catch {
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    await appendAudit(deps, {
+      timestamp: deps.clock.now().toISOString(),
+      memberId: member.id,
+      action: "processing_error",
+      detail: errMsg,
+    });
     await sendReply(deps, chatId, ERROR_REPLY);
   }
   res.status(200).json({ ok: true });
