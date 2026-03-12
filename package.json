@@ -19,7 +19,8 @@
     "test:coverage": "vitest run --coverage",
     "quality": "npm run typecheck && npm run lint && npm run test:coverage",
     "bootstrap": "npx tsx scripts/bootstrap.ts",
-    "eval": "npx tsx evals/run.ts"
+    "eval": "npx tsx evals/run.ts",
+    "eval:inference": "npx tsx evals/run-inference.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

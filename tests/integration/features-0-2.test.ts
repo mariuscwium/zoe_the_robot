@@ -483,8 +483,8 @@ describe("Feature 2 — Image Ingestion & Autonomous Action", () => {
 
     expect(res.statusCode).toBe(200);
 
-    // Agent was called 16 times (max iterations)
-    expect(ctx.claude.receivedParams).toHaveLength(16);
+    // Agent was called 16 times (max iterations) + 1 inference call
+    expect(ctx.claude.receivedParams).toHaveLength(17);
 
     // Fallback message sent to user
     const outbox = ctx.telegram.getOutbox();

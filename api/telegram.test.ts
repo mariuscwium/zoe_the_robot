@@ -15,9 +15,11 @@ const SECRET_HEADER = "x-telegram-bot-api-secret-token";
 
 class StubClaude implements ClaudeClient {
   lastParams: ClaudeMessageParams | null = null;
+  allParams: ClaudeMessageParams[] = [];
 
   createMessage(params: ClaudeMessageParams): Promise<ClaudeMessage> {
     this.lastParams = params;
+    this.allParams.push(params);
     return Promise.resolve({
       id: "msg_stub",
       type: "message",
@@ -179,8 +181,9 @@ describe("POST /api/telegram", () => {
     const res = createMockRes();
     await ctx.handler(req, res);
     expect(res.statusCode).toBe(200);
-    expect(ctx.claude.lastParams).not.toBeNull();
-    const userMsg = ctx.claude.lastParams?.messages.at(-1);
+    const agentParams = ctx.claude.allParams[0];
+    expect(agentParams).toBeDefined();
+    const userMsg = agentParams?.messages.at(-1);
     expect(userMsg?.role).toBe("user");
     const content = userMsg?.content;
     expect(Array.isArray(content)).toBe(true);

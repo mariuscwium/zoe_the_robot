@@ -11,6 +11,7 @@ import { loadHistory, appendMessage } from "../lib/history.js";
 import { sendReply, downloadImage } from "../lib/telegram.js";
 import { appendAudit, appendIncoming } from "../lib/audit.js";
 import { invokeAgent } from "../lib/agent.js";
+import { runInference } from "../lib/inference.js";
 import { getProdDeps, getWebhookConfig } from "../lib/prod-deps.js";
 
 interface WebhookConfig {
@@ -116,6 +117,22 @@ async function processMessage(
   await appendMessage(deps, chatId, { role: "assistant", content: reply, timestamp: now });
   await logIncoming(deps, member.id, userText, message.photo);
   await sendReply(deps, chatId, reply);
+  if (userText !== "") {
+    await runInferenceSafe(deps, member, userText, reply);
+  }
+}
+
+async function runInferenceSafe(
+  deps: Deps,
+  member: FamilyMember,
+  userText: string,
+  reply: string,
+): Promise<void> {
+  try {
+    await runInference(deps, member, { userMessage: userText, assistantReply: reply });
+  } catch {
+    // Inference failure is non-critical — don't affect the user
+  }
 }
 
 async function claimMessage(
