@@ -124,8 +124,10 @@ async function claimMessage(
   messageId: number,
 ): Promise<boolean> {
   const key = `dedup:${String(chatId)}:${String(messageId)}`;
-  const res = await deps.redis.execute(["SET", key, "1", "NX", "EX", "300"]);
-  return res.result === null;
+  const res = await deps.redis.execute(["SETNX", key, "1"]);
+  if (res.result === 0) return true;
+  await deps.redis.execute(["EXPIRE", key, "300"]);
+  return false;
 }
 
 async function extractImage(

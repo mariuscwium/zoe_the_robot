@@ -30,6 +30,24 @@ export function handleSetex(
   return applySetOptions(["EX", seconds], { key, value, store }, nowMs);
 }
 
+export function handleSetnx(
+  args: string[],
+  store: Map<string, StoreEntry>,
+  nowMs: number,
+): RedisResult {
+  const key = args[0];
+  const value = args[1];
+  if (key === undefined || value === undefined) {
+    return err("ERR wrong number of arguments for 'setnx' command");
+  }
+  const existing = store.get(key);
+  if (existing !== undefined && !isExpired(existing, nowMs)) {
+    return ok(0);
+  }
+  store.set(key, { kind: "string", value });
+  return ok(1);
+}
+
 export function handleSet(
   args: string[],
   store: Map<string, StoreEntry>,
