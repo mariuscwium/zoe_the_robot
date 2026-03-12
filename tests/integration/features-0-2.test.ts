@@ -462,7 +462,7 @@ describe("Feature 2 — Image Ingestion & Autonomous Action", () => {
     // Verify the calendar event was actually created in the twin
     const events = await ctx.calendar.listEvents({});
     expect(events.items).toHaveLength(1);
-    expect(events.items[0]?.summary).toBe("Birthday Party");
+    expect(events.items[0]?.summary).toBe("Birthday Party - Zoe");
     expect(events.items[0]?.location).toBe("42 Oak St");
   });
 

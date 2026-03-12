@@ -153,7 +153,7 @@ async function routeCalendarTool(
       return createEventFromInput(cd, input, tz);
     case "create_recurring_event":
       return createRecurringEvent(cd, {
-        summary: str(input, "summary"), startTime: str(input, "start_time"),
+        summary: str(input, "summary") + " - Zoe", startTime: str(input, "start_time"),
         endTime: str(input, "end_time"), recurrence: str(input, "recurrence"),
         description: optStr(input, "description"), location: optStr(input, "location"), timezone: tz,
       });
@@ -172,7 +172,7 @@ async function createEventFromInput(
   const reminders = Array.isArray(input.reminders)
     ? (input.reminders as { method: string; minutes: number }[]) : undefined;
   return createEvent(deps, {
-    summary: str(input, "summary"), startTime: str(input, "start_time"),
+    summary: str(input, "summary") + " - Zoe", startTime: str(input, "start_time"),
     endTime: str(input, "end_time"), description: optStr(input, "description"),
     location: optStr(input, "location"), timezone: tz, reminders,
   });

@@ -192,7 +192,7 @@ describe("Feature 4 — Agent & Tools", () => {
     });
     expect(events.items).toHaveLength(1);
     const event = events.items[0];
-    expect(event?.summary).toBe("Call accountant");
+    expect(event?.summary).toBe("Call accountant - Zoe");
     expect(event?.reminders?.useDefault).toBe(false);
     expect(event?.reminders?.overrides).toEqual([
       { method: "popup", minutes: 0 },
@@ -217,7 +217,7 @@ describe("Feature 4 — Agent & Tools", () => {
       timeMin: "2026-03-01T00:00:00Z",
       timeMax: "2026-03-31T00:00:00Z",
     });
-    const base = events.items.find((e: CalendarEvent) => e.summary === "Take medication");
+    const base = events.items.find((e: CalendarEvent) => e.summary === "Take medication - Zoe");
     expect(base).toBeDefined();
     expect(base?.recurrence).toEqual(["RRULE:FREQ=DAILY"]);
   });
@@ -405,7 +405,7 @@ describe("Feature 6 — Calendar", () => {
       timeMin: "2026-03-01T00:00:00Z",
       timeMax: "2026-03-31T00:00:00Z",
     });
-    const standup = events.items.find((e: CalendarEvent) => e.summary === "Standup");
+    const standup = events.items.find((e: CalendarEvent) => e.summary === "Standup - Zoe");
     expect(standup).toBeDefined();
     assertReminders(standup);
   });
