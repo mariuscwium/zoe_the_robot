@@ -9,6 +9,7 @@ import { err } from "./redis-types.js";
 import {
   handleGet,
   handleSet,
+  handleSetex,
   handleAppend,
   handleMget,
   handleMset,
@@ -44,6 +45,7 @@ type Handler = (
 const COMMAND_MAP: Record<string, Handler> = {
   GET: handleGet,
   SET: handleSet,
+  SETEX: handleSetex,
   DEL: handleDel,
   EXISTS: handleExists,
   KEYS: handleKeys,

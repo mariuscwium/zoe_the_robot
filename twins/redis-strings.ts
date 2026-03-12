@@ -16,6 +16,20 @@ export function handleGet(
   return ok(autoDeserialize(getString(store, key, nowMs)));
 }
 
+export function handleSetex(
+  args: string[],
+  store: Map<string, StoreEntry>,
+  nowMs: number,
+): RedisResult {
+  const key = args[0];
+  const seconds = args[1];
+  const value = args[2];
+  if (key === undefined || seconds === undefined || value === undefined) {
+    return err("ERR wrong number of arguments for 'setex' command");
+  }
+  return applySetOptions(["EX", seconds], { key, value, store }, nowMs);
+}
+
 export function handleSet(
   args: string[],
   store: Map<string, StoreEntry>,
