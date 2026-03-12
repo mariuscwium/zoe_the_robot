@@ -211,7 +211,7 @@ describe("RedisTwin", () => {
     it("MSET sets multiple keys, MGET retrieves them", async () => {
       await twin.execute(["MSET", "a", "1", "b", "2"]);
       const res = await twin.execute(["MGET", "a", "b", "c"]);
-      expect(res.result).toEqual(["1", "2", null]);
+      expect(res.result).toEqual([1, 2, null]);
     });
   });
 
@@ -265,8 +265,8 @@ describe("RedisTwin", () => {
       expect(results).toHaveLength(4);
       expect(results[0]?.result).toBe("OK");
       expect(results[1]?.result).toBe("OK");
-      expect(results[2]?.result).toBe("1");
-      expect(results[3]?.result).toBe("2");
+      expect(results[2]?.result).toBe(1);
+      expect(results[3]?.result).toBe(2);
     });
 
     it("continues on individual errors", async () => {

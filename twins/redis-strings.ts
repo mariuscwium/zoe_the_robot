@@ -4,7 +4,7 @@
 
 import type { RedisResult } from "../lib/deps.js";
 import type { StoreEntry } from "./redis-types.js";
-import { ok, err, getString, isExpired, WRONG_TYPE_MSG } from "./redis-types.js";
+import { ok, err, getString, isExpired, autoDeserialize, WRONG_TYPE_MSG } from "./redis-types.js";
 
 export function handleGet(
   args: string[],
@@ -13,7 +13,7 @@ export function handleGet(
 ): RedisResult {
   const key = args[0];
   if (key === undefined) return err("ERR wrong number of arguments for 'get' command");
-  return ok(getString(store, key, nowMs));
+  return ok(autoDeserialize(getString(store, key, nowMs)));
 }
 
 export function handleSet(
@@ -106,7 +106,7 @@ export function handleMget(
   store: Map<string, StoreEntry>,
   nowMs: number,
 ): RedisResult {
-  const results = args.map((key) => getString(store, key, nowMs));
+  const results = args.map((key) => autoDeserialize(getString(store, key, nowMs)));
   return ok(results);
 }
 

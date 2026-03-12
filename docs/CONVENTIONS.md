@@ -29,6 +29,7 @@
 ## Telegram
 
 - Group chats silently rejected (`chat.type !== "private"` → HTTP 200, no reply, no log)
+- Unknown chat IDs logged to audit as `rejected_unknown_chat` with the chat ID for easy whitelisting
 - Replies are plain text only — no markdown formatting sent to Telegram users
 
 ## Agent

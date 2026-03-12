@@ -284,10 +284,9 @@ describe("Feature 1 — Webhook Ingestion", () => {
 
     // Incoming log appended (check Redis for log:incoming)
     const logRes = await ctx.redis.execute(["LRANGE", "log:incoming", "0", "-1"]);
-    const logs = logRes.result as string[];
+    const logs = logRes.result as Record<string, unknown>[];
     expect(logs).toHaveLength(1);
-    const logStr = logs[0] ?? "";
-    const entry = JSON.parse(logStr) as Record<string, unknown>;
+    const entry = logs[0]!;
     expect(entry.memberId).toBe("marius");
     expect(entry.messageType).toBe("text");
     expect(entry.text).toBe("what's on the shopping list?");
@@ -332,10 +331,9 @@ describe("Feature 1 — Webhook Ingestion", () => {
 
     // Incoming log records photo type
     const logRes = await ctx.redis.execute(["LRANGE", "log:incoming", "0", "-1"]);
-    const logs = logRes.result as string[];
+    const logs = logRes.result as Record<string, unknown>[];
     expect(logs).toHaveLength(1);
-    const photoLogStr = logs[0] ?? "";
-    const photoEntry = JSON.parse(photoLogStr) as Record<string, unknown>;
+    const photoEntry = logs[0]!;
     expect(photoEntry.messageType).toBe("photo");
   });
 

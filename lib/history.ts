@@ -34,18 +34,7 @@ function isMessageShape(v: unknown): v is ConversationMessage {
 }
 
 function parseMessage(raw: unknown): ConversationMessage | null {
-  if (typeof raw === "string") {
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      if (isMessageShape(parsed)) {
-        return { role: parsed.role, content: parsed.content, timestamp: parsed.timestamp };
-      }
-    } catch {
-      // Malformed JSON — skip this entry
-    }
-    return null;
-  }
-  // Upstash SDK may auto-deserialize JSON from lists
+  // Redis client (twin or Upstash SDK) auto-deserializes JSON from lists
   if (isMessageShape(raw)) {
     return { role: raw.role, content: raw.content, timestamp: raw.timestamp };
   }

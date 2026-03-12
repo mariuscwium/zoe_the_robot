@@ -56,10 +56,9 @@ async function fetchLog<T>(
   if (res.error !== undefined) {
     throw new Error(`Redis error reading ${key}: ${res.error}`);
   }
-  const items = res.result as unknown[];
-  return items.map((raw) =>
-    typeof raw === "string" ? (JSON.parse(raw) as T) : (raw as T),
-  );
+  // Redis client (twin or Upstash SDK) auto-deserializes JSON from lists
+  const items = res.result as T[];
+  return items;
 }
 
 export async function getAuditLog(

@@ -20,7 +20,7 @@
 - **GitHub**: `mariuscwium/zoe_the_robot` (public repo, pre-push hook guards secrets/PII)
 - **Telegram**: bot is [@zoe_the_robot](https://t.me/zoe_the_robot) ("Zoe"), webhook → Vercel
 - **Redis**: Upstash instance provisioned and bootstrapped
-- **Google Calendar**: not yet configured (deferred — needs OAuth2 consent flow)
+- **Google Calendar**: code complete — needs OAuth2 credentials in Vercel env vars
 - **Debug UI**: not yet configured (needs password hash + JWT secret)
 
 ### Local Development
@@ -36,9 +36,16 @@
 - Vercel needs `outputDirectory: "."` for API-only projects (no static output)
 - Google Calendar env vars made optional — stub client throws on use when not configured
 
+## Live Features
+
+- **Family registry**: whitelisted members via bootstrap, unknown chat IDs logged to audit
+- **Conversation memory**: per-member history, shared family lists (shopping, todos), personal todos
+- **Google Calendar**: full integration (list, create, recurring, delete, find) — awaiting OAuth2 credentials
+- **Telegram bot**: private chat only, text + image support, error handling
+
 ## Future Work (v2)
 
-- Google Calendar integration (OAuth2 consent flow)
+- Google Calendar OAuth2 credential setup (all code is ready)
 - Debug UI setup (password hash, JWT secret)
 - Weekly cron for proactive check-ins (Vercel cron slot reserved)
 - Holdout test suite (10 orchestrator-written scenarios)

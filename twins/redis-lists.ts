@@ -4,7 +4,7 @@
 
 import type { RedisResult } from "../lib/deps.js";
 import type { StoreEntry } from "./redis-types.js";
-import { ok, err, getList, isExpired, WRONG_TYPE_MSG } from "./redis-types.js";
+import { ok, err, getList, isExpired, autoDeserialize, WRONG_TYPE_MSG } from "./redis-types.js";
 
 export function handleLpush(
   args: string[],
@@ -72,7 +72,7 @@ export function handleLpop(
   if (entry !== undefined && entry.kind !== "list") return err(WRONG_TYPE_MSG);
   const val = items.shift() ?? null;
   if (items.length === 0) store.delete(key);
-  return ok(val);
+  return ok(autoDeserialize(val));
 }
 
 export function handleRpop(
@@ -88,7 +88,7 @@ export function handleRpop(
   if (entry !== undefined && entry.kind !== "list") return err(WRONG_TYPE_MSG);
   const val = items.pop() ?? null;
   if (items.length === 0) store.delete(key);
-  return ok(val);
+  return ok(autoDeserialize(val));
 }
 
 export function handleLrange(
@@ -107,7 +107,7 @@ export function handleLrange(
   let stop = parseInt(stopStr, 10);
   if (start < 0) start = Math.max(0, len + start);
   if (stop < 0) stop = len + stop;
-  return ok(items.slice(start, stop + 1));
+  return ok(items.slice(start, stop + 1).map(autoDeserialize));
 }
 
 export function handleLtrim(

@@ -40,7 +40,7 @@
     "tsx": "^4.0.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.0.0",
-    "vercel": "^41.0.0",
+    "vercel": "^50.31.1",
     "vitest": "^3.0.0"
   }
 }

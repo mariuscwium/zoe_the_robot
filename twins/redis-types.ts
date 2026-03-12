@@ -60,6 +60,19 @@ export function getList(
   return entry.items;
 }
 
+/**
+ * Auto-deserialize a string value the way the Upstash SDK does.
+ * If the string is valid JSON, return the parsed value; otherwise return as-is.
+ */
+export function autoDeserialize(value: string | null): unknown {
+  if (value === null) return null;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
+
 export function ok(result: unknown): RedisResult {
   return { result };
 }
