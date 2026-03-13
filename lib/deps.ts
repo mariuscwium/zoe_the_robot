@@ -143,6 +143,12 @@ export interface ClaudeMessage {
   stop_reason: string | null;
 }
 
+// --- Transcription ---
+
+export interface TranscriptionClient {
+  transcribe(buffer: Buffer, mimeType: string): Promise<string>;
+}
+
 // --- Clock ---
 
 export interface Clock {
@@ -162,5 +168,6 @@ export interface Deps {
   telegram: TelegramClient;
   calendar: CalendarProvider;
   claude: ClaudeClient;
+  transcription: TranscriptionClient;
   clock: Clock;
 }

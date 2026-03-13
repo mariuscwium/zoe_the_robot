@@ -81,6 +81,30 @@ export async function downloadImage(
   }
 }
 
+/**
+ * Download a voice note from Telegram and return its buffer + mime type.
+ * Returns null on any error.
+ */
+export async function downloadVoice(
+  deps: TelegramDeps,
+  fileId: string,
+): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  try {
+    const fileResult = await deps.telegram.getFile(fileId);
+    if (!fileResult.ok || !fileResult.result?.file_path) {
+      return null;
+    }
+
+    const buffer = await deps.telegram.downloadFile(fileResult.result.file_path);
+    const filePath = fileResult.result.file_path;
+    const ext = filePath.split(".").pop()?.toLowerCase();
+    const mimeType = ext === "oga" || ext === "ogg" ? "audio/ogg" : `audio/${ext ?? "ogg"}`;
+    return { buffer, mimeType };
+  } catch {
+    return null;
+  }
+}
+
 interface WebhookParams {
   url: string;
   secretToken: string;

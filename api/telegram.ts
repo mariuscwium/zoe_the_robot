@@ -1,28 +1,19 @@
-/**
- * Telegram webhook handler (POST /api/telegram).
- * Validates the request, checks whitelist, invokes Claude agent, replies.
- */
+/** Telegram webhook handler (POST /api/telegram). */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { Deps } from "../lib/deps.js";
 import type { FamilyMember } from "../lib/types.js";
 import { getMember } from "../lib/registry.js";
 import { loadHistory, appendMessage } from "../lib/history.js";
-import { sendReply, downloadImage } from "../lib/telegram.js";
+import { sendReply, downloadImage, downloadVoice } from "../lib/telegram.js";
 import { appendAudit, appendIncoming } from "../lib/audit.js";
 import { invokeAgent } from "../lib/agent.js";
 import { runInference } from "../lib/inference.js";
 import { getProdDeps, getWebhookConfig } from "../lib/prod-deps.js";
 
-interface WebhookConfig {
-  webhookSecret: string;
-}
-
-interface TelegramPhoto {
-  file_id: string;
-  width: number;
-  height: number;
-}
+interface WebhookConfig { webhookSecret: string }
+interface TelegramPhoto { file_id: string; width: number; height: number }
+interface TelegramVoice { file_id: string; duration: number; mime_type?: string }
 
 interface TelegramUpdate {
   message?: {
@@ -31,6 +22,7 @@ interface TelegramUpdate {
     text?: string;
     caption?: string;
     photo?: TelegramPhoto[];
+    voice?: TelegramVoice;
   };
 }
 
@@ -94,14 +86,35 @@ async function handleUpdate(
   res.status(200).json({ ok: true });
 }
 
+function resolveHistoryText(
+  voiceTranscript: string | null,
+  userText: string,
+  hasImage: boolean,
+): string {
+  if (voiceTranscript !== null) return `[Voice] ${voiceTranscript}`;
+  if (userText !== "") return userText;
+  if (hasImage) return "[Image]";
+  return "";
+}
+
+function resolveMessageType(message: NonNullable<TelegramUpdate["message"]>): string {
+  if (message.voice) return "voice";
+  if (message.photo) return "photo";
+  return "text";
+}
+
 async function processMessage(
   deps: Deps,
   chatId: number,
   member: FamilyMember,
   message: NonNullable<TelegramUpdate["message"]>,
 ): Promise<void> {
-  const userText = message.text ?? message.caption ?? "";
   const imageDataUri = await extractImage(deps, message.photo);
+  const voiceTranscript = await extractVoice(deps, message.voice);
+  const userText = voiceTranscript !== null
+    ? `[Voice message] ${voiceTranscript}`
+    : message.text ?? message.caption ?? "";
+
   const history = await loadHistory(deps, chatId);
   const reply = await invokeAgent(deps, {
     member,
@@ -110,12 +123,12 @@ async function processMessage(
     conversationHistory: history,
   });
   const now = deps.clock.now().toISOString();
-  const historyText = userText !== "" ? userText : (imageDataUri ? "[Image]" : "");
+  const historyText = resolveHistoryText(voiceTranscript, userText, imageDataUri !== null);
   if (historyText !== "") {
     await appendMessage(deps, chatId, { role: "user", content: historyText, timestamp: now });
   }
   await appendMessage(deps, chatId, { role: "assistant", content: reply, timestamp: now });
-  await logIncoming(deps, member.id, userText, message.photo);
+  await logIncoming(deps, member.id, userText, resolveMessageType(message));
   await sendReply(deps, chatId, reply);
   if (userText !== "") {
     await runInferenceSafe(deps, member, userText, reply);
@@ -157,19 +170,19 @@ async function extractImage(
   return downloadImage(deps, largest.file_id);
 }
 
-async function logIncoming(
-  deps: Deps,
-  memberId: string,
-  text: string,
-  photos: TelegramPhoto[] | undefined,
-): Promise<void> {
-  const messageType = photos ? "photo" : "text";
-  await appendIncoming(deps, {
-    timestamp: deps.clock.now().toISOString(),
-    memberId,
-    messageType,
-    text,
-  });
+async function extractVoice(deps: Deps, voice: TelegramVoice | undefined): Promise<string | null> {
+  if (!voice) return null;
+  const voiceData = await downloadVoice(deps, voice.file_id);
+  if (!voiceData) return null;
+  try {
+    return await deps.transcription.transcribe(voiceData.buffer, voiceData.mimeType);
+  } catch {
+    return null;
+  }
+}
+
+async function logIncoming(deps: Deps, memberId: string, text: string, messageType: string): Promise<void> {
+  await appendIncoming(deps, { timestamp: deps.clock.now().toISOString(), memberId, messageType, text });
 }
 
 let prodHandler: ((req: VercelRequest, res: VercelResponse) => Promise<void>) | null = null;
@@ -179,9 +192,6 @@ function getHandler(): (req: VercelRequest, res: VercelResponse) => Promise<void
   return prodHandler;
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   await getHandler()(req, res);
 }

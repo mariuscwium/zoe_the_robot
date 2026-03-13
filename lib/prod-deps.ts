@@ -3,13 +3,14 @@
  * Throws on missing required vars so failures are loud and early.
  */
 
-import type { Deps, CalendarProvider, CalendarClient, RedisClient } from "./deps.js";
+import type { Deps, CalendarProvider, CalendarClient, RedisClient, TranscriptionClient } from "./deps.js";
 import type { DebugConfig, DebugDeps } from "../api/debug.js";
 import {
   createRedisClient,
   createTelegramClient,
   createCalendarClient,
   createClaudeClient,
+  createTranscriptionClient,
   createClock,
 } from "./clients.js";
 import { loadMemberTokens } from "./oauth.js";
@@ -22,6 +23,16 @@ function requireEnv(name: string): string {
 
 function optionalEnv(name: string): string | undefined {
   return process.env[name] ?? undefined;
+}
+
+function buildTranscriptionClient(): TranscriptionClient {
+  const apiKey = optionalEnv("OPENAI_API_KEY");
+  if (!apiKey) {
+    return {
+      transcribe: () => Promise.reject(new Error("Voice messages aren't configured yet.")),
+    };
+  }
+  return createTranscriptionClient(apiKey);
 }
 
 function buildCalendarProvider(redis: RedisClient): CalendarProvider {
@@ -57,6 +68,7 @@ export function getProdDeps(): Deps {
     telegram: createTelegramClient(requireEnv("TELEGRAM_BOT_TOKEN")),
     calendar: buildCalendarProvider(redis),
     claude: createClaudeClient(requireEnv("ANTHROPIC_API_KEY")),
+    transcription: buildTranscriptionClient(),
     clock: createClock(),
   };
 
