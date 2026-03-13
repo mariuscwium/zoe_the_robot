@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { RedisTwin } from "../../twins/redis.js";
 import { CalendarTwin } from "../../twins/calendar.js";
 import { CalendarProviderTwin } from "../../twins/calendar-provider.js";
+import { createNotionTwin } from "../../twins/notion.js";
 import { invokeAgent } from "../../lib/agent.js";
 import type { AgentDeps, AgentParams } from "../../lib/agent.js";
 import { loadHistory, saveHistory } from "../../lib/history.js";
@@ -105,12 +106,14 @@ interface TestContext {
 function setup(claude: StubClaude): TestContext {
   const calendarTwin = new CalendarTwin();
   const redis = new RedisTwin(clock);
+  const { client: notion } = createNotionTwin();
   return {
     agentDeps: {
       claude,
       redis,
       calendar: new CalendarProviderTwin(calendarTwin),
       clock,
+      notion,
     },
     calendarTwin,
     redis,

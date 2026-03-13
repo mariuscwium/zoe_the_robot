@@ -14,6 +14,7 @@ import type {
   ListEventsParams,
   Clock,
 } from "./deps.js";
+import { createNotionTwin } from "../twins/notion.js";
 import type { FamilyMember } from "./types.js";
 import type { ConversationMessage } from "./history.js";
 import { invokeAgent } from "./agent.js";
@@ -114,8 +115,9 @@ const emptyHistory: ConversationMessage[] = [];
 
 function makeDeps(claude: StubClaude): { deps: AgentDeps; redis: StubRedis } {
   const redis = new StubRedis();
+  const { client: notion } = createNotionTwin();
   return {
-    deps: { claude, redis, calendar: new StubCalendarProvider(), clock: stubClock },
+    deps: { claude, redis, calendar: new StubCalendarProvider(), clock: stubClock, notion },
     redis,
   };
 }

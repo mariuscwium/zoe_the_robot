@@ -3,8 +3,9 @@
  * Separated from agent.ts to stay within line limits.
  */
 
-import type { RedisClient, CalendarClient, CalendarProvider, Clock } from "./deps.js";
+import type { RedisClient, CalendarClient, CalendarProvider, Clock, NotionClient } from "./deps.js";
 import type { FamilyMember, ToolResult } from "./types.js";
+import { isNotionTool, routeNotionTool } from "./notion-dispatch.js";
 import {
   readMemory,
   writeMemory,
@@ -25,6 +26,7 @@ export interface DispatchDeps {
   redis: RedisClient;
   calendar: CalendarProvider;
   clock: Clock;
+  notion: NotionClient;
 }
 
 type ToolInput = Record<string, unknown>;
@@ -36,6 +38,9 @@ const MUTATING_TOOLS = new Set([
   "create_event",
   "create_recurring_event",
   "delete_calendar_event",
+  "create_notion_page",
+  "update_notion_page",
+  "append_notion_page",
 ]);
 
 export async function dispatchTool(
@@ -95,6 +100,9 @@ async function routeToolCall(
   const calendarResult = await routeCalendarTool(deps, member, name, input);
   if (calendarResult !== null) return calendarResult;
 
+  if (isNotionTool(name)) {
+    return routeNotionTool(deps.notion, name, input);
+  }
   if (name === "confirm_action") {
     return { success: true, data: "Confirmed" };
   }

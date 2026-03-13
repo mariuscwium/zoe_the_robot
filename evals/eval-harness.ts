@@ -13,6 +13,7 @@ import type { FamilyMember } from "../lib/types.js";
 import { RedisTwin } from "../twins/redis.js";
 import { CalendarTwin } from "../twins/calendar.js";
 import { CalendarProviderTwin } from "../twins/calendar-provider.js";
+import { createNotionTwin } from "../twins/notion.js";
 import { invokeAgent } from "../lib/agent.js";
 import { upsertMember } from "../lib/registry.js";
 
@@ -107,7 +108,8 @@ export async function runScenario(
   const calendarTwin = new CalendarTwin();
   const calendarProvider = new CalendarProviderTwin(calendarTwin, scenario.calendarConnected);
 
-  const deps: AgentDeps = { claude: spy, redis, calendar: calendarProvider, clock };
+  const { client: notion } = createNotionTwin();
+  const deps: AgentDeps = { claude: spy, redis, calendar: calendarProvider, clock, notion };
 
   await upsertMember({ redis }, TEST_MEMBER);
 
