@@ -66,49 +66,49 @@ describe("markdownToRichText", () => {
   it("parses plain text", () => {
     const result = markdownToRichText("hello");
     expect(result).toHaveLength(1);
-    expect(result[0]!.plain_text).toBe("hello");
-    expect(result[0]!.annotations.bold).toBe(false);
+    expect(result.at(0)?.plain_text).toBe("hello");
+    expect(result.at(0)?.annotations.bold).toBe(false);
   });
 
   it("parses bold", () => {
     const result = markdownToRichText("**bold**");
     expect(result).toHaveLength(1);
-    expect(result[0]!.plain_text).toBe("bold");
-    expect(result[0]!.annotations.bold).toBe(true);
+    expect(result.at(0)?.plain_text).toBe("bold");
+    expect(result.at(0)?.annotations.bold).toBe(true);
   });
 
   it("parses italic", () => {
     const result = markdownToRichText("*italic*");
     expect(result).toHaveLength(1);
-    expect(result[0]!.annotations.italic).toBe(true);
+    expect(result.at(0)?.annotations.italic).toBe(true);
   });
 
   it("parses inline code", () => {
     const result = markdownToRichText("`code`");
     expect(result).toHaveLength(1);
-    expect(result[0]!.annotations.code).toBe(true);
+    expect(result.at(0)?.annotations.code).toBe(true);
   });
 
   it("parses strikethrough", () => {
     const result = markdownToRichText("~~gone~~");
     expect(result).toHaveLength(1);
-    expect(result[0]!.annotations.strikethrough).toBe(true);
+    expect(result.at(0)?.annotations.strikethrough).toBe(true);
   });
 
   it("parses links", () => {
     const result = markdownToRichText("[click](https://example.com)");
     expect(result).toHaveLength(1);
-    expect(result[0]!.href).toBe("https://example.com");
-    expect(result[0]!.text.link).toEqual({ url: "https://example.com" });
+    expect(result.at(0)?.href).toBe("https://example.com");
+    expect(result.at(0)?.text.link).toEqual({ url: "https://example.com" });
   });
 
   it("parses mixed text", () => {
     const result = markdownToRichText("Hello **world**!");
     expect(result).toHaveLength(3);
-    expect(result[0]!.plain_text).toBe("Hello ");
-    expect(result[1]!.plain_text).toBe("world");
-    expect(result[1]!.annotations.bold).toBe(true);
-    expect(result[2]!.plain_text).toBe("!");
+    expect(result.at(0)?.plain_text).toBe("Hello ");
+    expect(result.at(1)?.plain_text).toBe("world");
+    expect(result.at(1)?.annotations.bold).toBe(true);
+    expect(result.at(2)?.plain_text).toBe("!");
   });
 
   it("returns empty array for empty string", () => {

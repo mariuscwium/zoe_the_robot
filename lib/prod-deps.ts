@@ -36,15 +36,17 @@ function buildTranscriptionClient(): TranscriptionClient {
   return createTranscriptionClient(apiKey);
 }
 
+const NOTION_NOT_CONFIGURED = "Notion isn't configured yet.";
+
 function buildNotionClient(): NotionClient {
   const apiKey = optionalEnv("NOTION_API_KEY");
   if (!apiKey) {
     return {
-      search: () => Promise.reject(new Error("Notion isn't configured yet.")),
-      getPage: () => Promise.reject(new Error("Notion isn't configured yet.")),
-      createPage: () => Promise.reject(new Error("Notion isn't configured yet.")),
-      updatePage: () => Promise.reject(new Error("Notion isn't configured yet.")),
-      appendToPage: () => Promise.reject(new Error("Notion isn't configured yet.")),
+      search: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
+      getPage: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
+      createPage: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
+      updatePage: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
+      appendToPage: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
     };
   }
   return createNotionClient(apiKey);

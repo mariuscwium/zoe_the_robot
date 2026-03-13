@@ -86,7 +86,7 @@ describe("markdownToBlocks", () => {
   it("parses paragraph", () => {
     const blocks = markdownToBlocks("Hello world");
     expect(blocks).toHaveLength(1);
-    expect(blocks[0]!.type).toBe("paragraph");
+    expect(blocks.at(0)?.type).toBe("paragraph");
   });
 
   it("parses headings", () => {
@@ -97,37 +97,37 @@ describe("markdownToBlocks", () => {
   it("parses bullet list", () => {
     const blocks = markdownToBlocks("- item one\n- item two");
     expect(blocks).toHaveLength(2);
-    expect(blocks[0]!.type).toBe("bulleted_list_item");
+    expect(blocks.at(0)?.type).toBe("bulleted_list_item");
   });
 
   it("parses numbered list", () => {
     const blocks = markdownToBlocks("1. first\n2. second");
     expect(blocks).toHaveLength(2);
-    expect(blocks[0]!.type).toBe("numbered_list_item");
+    expect(blocks.at(0)?.type).toBe("numbered_list_item");
   });
 
   it("parses to-do items", () => {
     const blocks = markdownToBlocks("- [ ] pending\n- [x] done");
-    expect(blocks[0]!.type).toBe("to_do");
-    expect((blocks[0]!.to_do as { checked: boolean }).checked).toBe(false);
-    expect((blocks[1]!.to_do as { checked: boolean }).checked).toBe(true);
+    expect(blocks.at(0)?.type).toBe("to_do");
+    expect((blocks.at(0)?.to_do as { checked: boolean } | undefined)?.checked).toBe(false);
+    expect((blocks.at(1)?.to_do as { checked: boolean } | undefined)?.checked).toBe(true);
   });
 
   it("parses code block", () => {
     const blocks = markdownToBlocks("```typescript\nconst x = 1;\n```");
     expect(blocks).toHaveLength(1);
-    expect(blocks[0]!.type).toBe("code");
-    expect((blocks[0]!.code as { language: string }).language).toBe("typescript");
+    expect(blocks.at(0)?.type).toBe("code");
+    expect((blocks.at(0)?.code as { language: string } | undefined)?.language).toBe("typescript");
   });
 
   it("parses quote", () => {
     const blocks = markdownToBlocks("> wise words");
-    expect(blocks[0]!.type).toBe("quote");
+    expect(blocks.at(0)?.type).toBe("quote");
   });
 
   it("parses divider", () => {
     const blocks = markdownToBlocks("---");
-    expect(blocks[0]!.type).toBe("divider");
+    expect(blocks.at(0)?.type).toBe("divider");
   });
 
   it("skips empty lines", () => {

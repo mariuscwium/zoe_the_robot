@@ -114,7 +114,7 @@ interface PageObjectResponse {
   properties: Record<string, unknown>;
 }
 
-type BlockObjectResponse = { id: string; type: string; has_children: boolean };
+interface BlockObjectResponse { id: string; type: string; has_children: boolean }
 
 function extractPage(page: PageObjectResponse): NotionPage {
   return {
@@ -128,6 +128,6 @@ function extractPage(page: PageObjectResponse): NotionPage {
 function extractTitle(page: PageObjectResponse): string {
   const titleProp = page.properties.title ?? page.properties.Title;
   if (!titleProp) return "Untitled";
-  const titleObj = titleProp as { title?: Array<{ plain_text: string }> };
+  const titleObj = titleProp as { title?: { plain_text: string }[] };
   return titleObj.title?.[0]?.plain_text ?? "Untitled";
 }

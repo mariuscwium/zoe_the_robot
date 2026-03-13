@@ -52,18 +52,29 @@ function getRichText(block: NotionBlock): NotionRichText[] {
   return content?.rich_text ?? [];
 }
 
+const HEADING_PREFIXES: Record<string, string> = {
+  heading_1: "# ",
+  heading_2: "## ",
+  heading_3: "### ",
+};
+
+function simpleTextLine(type: string, text: string): string | null {
+  const prefix = HEADING_PREFIXES[type];
+  if (prefix !== undefined) return `${prefix}${text}`;
+  if (type === "bulleted_list_item") return `- ${text}`;
+  if (type === "numbered_list_item") return `1. ${text}`;
+  if (type === "quote") return `> ${text}`;
+  if (type === "paragraph") return text || "";
+  return null;
+}
+
 function blockToLine(block: NotionBlock): string {
   const text = richTextToMarkdown(getRichText(block));
+  const simple = simpleTextLine(block.type, text);
+  if (simple !== null) return simple;
   switch (block.type) {
-    case "paragraph": return text || "";
-    case "heading_1": return `# ${text}`;
-    case "heading_2": return `## ${text}`;
-    case "heading_3": return `### ${text}`;
-    case "bulleted_list_item": return `- ${text}`;
-    case "numbered_list_item": return `1. ${text}`;
     case "to_do": return toDoLine(block, text);
     case "code": return codeLine(block);
-    case "quote": return `> ${text}`;
     case "divider": return "---";
     case "callout": return calloutLine(block, text);
     default: return `[unsupported: ${block.type}]`;
@@ -96,7 +107,7 @@ export function markdownToBlocks(md: string): NotionBlock[] {
   let i = 0;
 
   while (i < lines.length) {
-    const line = lines[i]!;
+    const line = lines[i] ?? "";
     if (line.startsWith("```")) {
       const result = parseCodeBlock(lines, i);
       blocks.push(result.block);
@@ -113,11 +124,11 @@ export function markdownToBlocks(md: string): NotionBlock[] {
 function parseCodeBlock(
   lines: string[], start: number,
 ): { block: NotionBlock; nextIndex: number } {
-  const lang = lines[start]!.slice(3).trim();
+  const lang = (lines[start] ?? "").slice(3).trim();
   const codeLines: string[] = [];
   let i = start + 1;
-  while (i < lines.length && !lines[i]!.startsWith("```")) {
-    codeLines.push(lines[i]!);
+  while (i < lines.length && !(lines[i] ?? "").startsWith("```")) {
+    codeLines.push(lines[i] ?? "");
     i++;
   }
   return {
@@ -133,7 +144,7 @@ function lineToBlock(line: string): NotionBlock | null {
   if (line === "") return null;
   if (line === "---") return { id: "", type: "divider", has_children: false, divider: {} };
 
-  const heading = line.match(/^(#{1,3}) (.+)/);
+  const heading = /^(#{1,3}) (.+)/.exec(line);
   if (heading) return headingBlock(heading);
 
   if (line.startsWith("- [x] ") || line.startsWith("- [ ] ")) return toDoBlock(line);
@@ -145,9 +156,9 @@ function lineToBlock(line: string): NotionBlock | null {
 }
 
 function headingBlock(match: RegExpMatchArray): NotionBlock {
-  const level = match[1]!.length as 1 | 2 | 3;
-  const type = `heading_${level}` as const;
-  return richTextBlock(type, match[2]!);
+  const level = (match[1] ?? "").length as 1 | 2 | 3;
+  const type = `heading_${String(level)}` as const;
+  return richTextBlock(type, match[2] ?? "");
 }
 
 function toDoBlock(line: string): NotionBlock {
