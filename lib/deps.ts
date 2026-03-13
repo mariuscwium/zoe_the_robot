@@ -150,6 +150,23 @@ export interface TranscriptionClient {
   transcribe(buffer: Buffer, mimeType: string): Promise<string>;
 }
 
+// --- Notion ---
+
+export interface NotionPage {
+  id: string;
+  title: string;
+  url: string;
+  lastEditedTime: string;
+}
+
+export interface NotionClient {
+  search(query: string): Promise<NotionPage[]>;
+  getPage(pageId: string): Promise<{ page: NotionPage; markdown: string }>;
+  createPage(parentId: string, title: string, markdown: string): Promise<NotionPage>;
+  updatePage(pageId: string, markdown: string): Promise<void>;
+  appendToPage(pageId: string, markdown: string): Promise<void>;
+}
+
 // --- Clock ---
 
 export interface Clock {
@@ -171,4 +188,5 @@ export interface Deps {
   claude: ClaudeClient;
   transcription: TranscriptionClient;
   clock: Clock;
+  notion: NotionClient;
 }
