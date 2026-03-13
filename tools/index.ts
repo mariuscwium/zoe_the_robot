@@ -64,7 +64,7 @@ const listMemoryKeys: ClaudeTool = {
       pattern: {
         type: "string",
         description:
-          "A glob pattern to match keys, e.g. 'memory:family:*' for all shared docs or 'memory:members:marius:*' for personal docs.",
+          "A glob pattern to match keys, e.g. 'family/*' for all shared docs or 'members/marius/*' for personal docs. Use '*' to list all memory keys.",
       },
     },
     required: ["pattern"],
