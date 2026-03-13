@@ -241,6 +241,103 @@ const findEvents: ClaudeTool = {
   },
 };
 
+const searchNotion: ClaudeTool = {
+  name: "search_notion",
+  description:
+    "Search the user's Notion workspace for pages by title or content. Returns matching pages with their IDs. Use this to find pages before reading or creating them.",
+  input_schema: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "Search text to find pages by title or content.",
+      },
+    },
+    required: ["query"],
+  },
+};
+
+const readNotionPage: ClaudeTool = {
+  name: "read_notion_page",
+  description:
+    "Read a Notion page's content as markdown. Returns the page title, URL, and full content. Always read a page before updating it.",
+  input_schema: {
+    type: "object",
+    properties: {
+      page_id: {
+        type: "string",
+        description: "The Notion page ID to read.",
+      },
+    },
+    required: ["page_id"],
+  },
+};
+
+const createNotionPage: ClaudeTool = {
+  name: "create_notion_page",
+  description:
+    "Create a new Notion page under a parent page. Content is written as markdown and converted to Notion blocks. Use search_notion first to find the right parent page.",
+  input_schema: {
+    type: "object",
+    properties: {
+      title: {
+        type: "string",
+        description: "The page title.",
+      },
+      markdown: {
+        type: "string",
+        description: "The page content as markdown.",
+      },
+      parent_page_id: {
+        type: "string",
+        description:
+          "The ID of the parent page. Use search_notion to find the right parent.",
+      },
+    },
+    required: ["title", "markdown", "parent_page_id"],
+  },
+};
+
+const updateNotionPage: ClaudeTool = {
+  name: "update_notion_page",
+  description:
+    "Replace all content of a Notion page with new markdown. This is destructive — always read the page first with read_notion_page. Pages with more than 100 blocks cannot be updated; use append_notion_page instead.",
+  input_schema: {
+    type: "object",
+    properties: {
+      page_id: {
+        type: "string",
+        description: "The Notion page ID to update.",
+      },
+      markdown: {
+        type: "string",
+        description: "The new page content as markdown (replaces all existing content).",
+      },
+    },
+    required: ["page_id", "markdown"],
+  },
+};
+
+const appendNotionPage: ClaudeTool = {
+  name: "append_notion_page",
+  description:
+    "Append markdown content to the end of an existing Notion page. Non-destructive — existing content is preserved. Good for adding to lists, notes, or logs.",
+  input_schema: {
+    type: "object",
+    properties: {
+      page_id: {
+        type: "string",
+        description: "The Notion page ID to append to.",
+      },
+      markdown: {
+        type: "string",
+        description: "The markdown content to append to the end of the page.",
+      },
+    },
+    required: ["page_id", "markdown"],
+  },
+};
+
 const confirmAction: ClaudeTool = {
   name: "confirm_action",
   description:
@@ -259,15 +356,8 @@ const confirmAction: ClaudeTool = {
 };
 
 export const TOOL_DEFINITIONS: ClaudeTool[] = [
-  readMemory,
-  writeMemory,
-  deleteMemory,
-  listMemoryKeys,
-  appendMemory,
-  listEvents,
-  createEvent,
-  createRecurringEvent,
-  deleteCalendarEvent,
-  findEvents,
+  readMemory, writeMemory, deleteMemory, listMemoryKeys, appendMemory,
+  listEvents, createEvent, createRecurringEvent, deleteCalendarEvent, findEvents,
+  searchNotion, readNotionPage, createNotionPage, updateNotionPage, appendNotionPage,
   confirmAction,
 ];
