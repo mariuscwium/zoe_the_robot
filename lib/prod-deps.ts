@@ -3,7 +3,8 @@
  * Throws on missing required vars so failures are loud and early.
  */
 
-import type { Deps, CalendarProvider, CalendarClient, RedisClient, TranscriptionClient } from "./deps.js";
+import type { Deps, CalendarProvider, CalendarClient, RedisClient, TranscriptionClient, NotionClient } from "./deps.js";
+import { createNotionClient } from "./notion-client.js";
 import type { DebugConfig, DebugDeps } from "../api/debug.js";
 import {
   createRedisClient,
@@ -33,6 +34,20 @@ function buildTranscriptionClient(): TranscriptionClient {
     };
   }
   return createTranscriptionClient(apiKey);
+}
+
+function buildNotionClient(): NotionClient {
+  const apiKey = optionalEnv("NOTION_API_KEY");
+  if (!apiKey) {
+    return {
+      search: () => Promise.reject(new Error("Notion isn't configured yet.")),
+      getPage: () => Promise.reject(new Error("Notion isn't configured yet.")),
+      createPage: () => Promise.reject(new Error("Notion isn't configured yet.")),
+      updatePage: () => Promise.reject(new Error("Notion isn't configured yet.")),
+      appendToPage: () => Promise.reject(new Error("Notion isn't configured yet.")),
+    };
+  }
+  return createNotionClient(apiKey);
 }
 
 function buildCalendarProvider(redis: RedisClient): CalendarProvider {
@@ -70,6 +85,7 @@ export function getProdDeps(): Deps {
     claude: createClaudeClient(requireEnv("ANTHROPIC_API_KEY")),
     transcription: buildTranscriptionClient(),
     clock: createClock(),
+    notion: buildNotionClient(),
   };
 
   return _deps;
