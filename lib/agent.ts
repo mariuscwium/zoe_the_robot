@@ -55,6 +55,7 @@ function buildSystemPrompt(clock: Clock, member: FamilyMember): string {
     `Member timezone: ${member.timezone}.`,
     "Use tools to read/write memory and manage calendar events. NEVER say you created, deleted, or modified something without actually calling the tool. You must call create_event for EACH event individually — do not summarize or skip any. If you need to create multiple events, call create_event multiple times in the same response.",
     "If a calendar tool returns calendar_not_connected, send the member the authUrl link and ask them to click it to connect their Google Calendar.",
+    "When a message starts with '[Voice message]', the user sent a Telegram voice note that has already been transcribed to text for you. Respond to the transcribed content naturally — do NOT say you cannot process voice messages.",
     "CRITICAL: Your replies go to Telegram which does not render markdown. Never use **, *, `, #, or - bullets. Write plain conversational text only.",
     "The server injects authorship on mutating tools — never include it.",
   ].join("\n");
