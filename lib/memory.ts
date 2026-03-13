@@ -51,30 +51,12 @@ export async function listMemoryKeys(
   deps: MemoryDeps,
   pattern: string,
 ): Promise<string[]> {
-  const allKeys: string[] = [];
-  let cursor = "0";
-
-  do {
-    const res = await deps.redis.execute([
-      "SCAN",
-      cursor,
-      "MATCH",
-      pattern,
-      "COUNT",
-      "100",
-    ]);
-    if (res.error !== undefined) {
-      throw new Error(`Redis error scanning memory keys: ${res.error}`);
-    }
-    const scanResult = res.result as [string, string[]];
-    cursor = scanResult[0];
-    const keys = scanResult[1];
-    for (const k of keys) {
-      allKeys.push(k);
-    }
-  } while (cursor !== "0");
-
-  return allKeys.sort();
+  const res = await deps.redis.execute(["KEYS", pattern]);
+  if (res.error !== undefined) {
+    throw new Error(`Redis error listing memory keys: ${res.error}`);
+  }
+  const keys = (res.result as string[]) ?? [];
+  return keys.sort();
 }
 
 export async function appendToMemory(
