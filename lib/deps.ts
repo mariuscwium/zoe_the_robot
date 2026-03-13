@@ -141,6 +141,7 @@ export interface ClaudeMessage {
   content: ClaudeContentBlock[];
   model: string;
   stop_reason: string | null;
+  usage?: { input_tokens: number; output_tokens: number };
 }
 
 // --- Transcription ---

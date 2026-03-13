@@ -7,6 +7,8 @@
 import type { ClaudeClient, RedisClient, Clock } from "./deps.js";
 import type { FamilyMember } from "./types.js";
 import { listMemoryKeys, readMemory, writeMemory } from "./memory.js";
+import { logTokenUsage } from "./log-tokens.js";
+import { logInferenceRun } from "./log-inference.js";
 
 export interface InferenceDeps {
   claude: ClaudeClient;
@@ -60,7 +62,7 @@ export async function runInference(
   member: FamilyMember,
   turn: ConversationTurn,
 ): Promise<MemoryWrite[]> {
-  const existingKeys = await listMemoryKeys(deps, "memory:family:*");
+  const existingKeys = await listMemoryKeys(deps, "family/*");
   const existingDocs = await loadRelevantDocs(deps, existingKeys);
   const userPrompt = buildUserPrompt(member, turn, existingKeys, existingDocs);
 
@@ -70,11 +72,13 @@ export async function runInference(
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });
+  await logTokenUsage(deps, "inference", response);
 
   const writes = parseWrites(response.content);
   for (const write of writes) {
     await writeMemory(deps, write.key, write.content);
   }
+  await logInferenceRun(deps, member.id, existingKeys, writes);
   return writes;
 }
 
@@ -83,14 +87,13 @@ async function loadRelevantDocs(
   keys: string[],
 ): Promise<Map<string, string>> {
   const docs = new Map<string, string>();
-  const relevantPrefixes = ["memory:family:members:", "memory:family:activities:", "memory:family:dates"];
+  const relevantPrefixes = ["family/members/", "family/activities/", "family/dates"];
   const toLoad = keys.filter((k) => relevantPrefixes.some((p) => k.startsWith(p)));
 
-  for (const fullKey of toLoad) {
-    const shortKey = fullKey.replace(/^memory:/, "");
-    const content = await readMemory(deps, shortKey);
+  for (const key of toLoad) {
+    const content = await readMemory(deps, key);
     if (content !== null) {
-      docs.set(shortKey, content);
+      docs.set(key, content);
     }
   }
   return docs;
@@ -110,9 +113,8 @@ function buildUserPrompt(
   parts.push("Zoe: " + turn.assistantReply);
 
   if (existingKeys.length > 0) {
-    const shortKeys = existingKeys.map((k) => k.replace(/^memory:/, ""));
     parts.push("");
-    parts.push("Existing memory keys: " + shortKeys.join(", "));
+    parts.push("Existing memory keys: " + existingKeys.join(", "));
   }
 
   if (existingDocs.size > 0) {

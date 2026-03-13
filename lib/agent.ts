@@ -16,6 +16,7 @@ import type { ConversationMessage } from "./history.js";
 import { TOOL_DEFINITIONS } from "../tools/index.js";
 import { buildDateTimeContext } from "./datetime.js";
 import { dispatchTool } from "./agent-dispatch.js";
+import { logTokenUsage } from "./log-tokens.js";
 
 export interface AgentDeps {
   claude: ClaudeClient;
@@ -109,6 +110,7 @@ async function runToolLoop(
       messages,
       tools: TOOL_DEFINITIONS,
     });
+    await logTokenUsage(deps, "zoe", response);
     if (response.stop_reason === "end_turn") {
       return extractText(response.content);
     }
