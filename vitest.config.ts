@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["**/*.test.ts"],
-    exclude: ["node_modules", "dist"],
+    exclude: ["node_modules", "dist", ".claude"],
     coverage: {
       provider: "v8",
       include: ["lib/**/*.ts", "api/**/*.ts", "tools/**/*.ts", "twins/**/*.ts", "scripts/**/*.ts"],
