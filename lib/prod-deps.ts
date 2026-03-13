@@ -40,7 +40,6 @@ const NOTION_NOT_CONFIGURED = "Notion isn't configured yet.";
 
 function buildNotionClient(): NotionClient {
   const apiKey = optionalEnv("NOTION_API_KEY");
-  console.log(`[notion] NOTION_API_KEY ${apiKey ? `found (${String(apiKey.length)} chars)` : "missing"}`);
   if (!apiKey) {
     return {
       search: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),

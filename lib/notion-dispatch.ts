@@ -28,10 +28,7 @@ export async function routeNotionTool(
 ): Promise<ToolResult> {
   switch (name) {
     case "search_notion": {
-      const query = str(input, "query");
-      console.log(`[notion] search query="${query}"`);
-      const pages = await notion.search(query);
-      console.log(`[notion] search returned ${String(pages.length)} pages`);
+      const pages = await notion.search(str(input, "query"));
       return { success: true, data: pages };
     }
     case "read_notion_page": {

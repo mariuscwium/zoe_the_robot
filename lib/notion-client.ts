@@ -24,17 +24,11 @@ export function createNotionClient(apiKey: string): NotionClient {
 }
 
 async function searchPages(sdk: Client, query: string): Promise<NotionPage[]> {
-  console.log(`[notion-client] searching for "${query}"`);
   const response = await sdk.search({
     query,
     filter: { value: "page", property: "object" },
     page_size: 10,
   });
-  console.log(`[notion-client] raw results: ${String(response.results.length)}`);
-  if (response.results.length > 0) {
-    const first = response.results[0];
-    console.log(`[notion-client] first result object=${String(first?.object)} hasProps=${"properties" in (first ?? {})}`);
-  }
   return response.results
     .filter((r) => r.object === "page" && "properties" in r)
     .map((r) => extractPage(r as unknown as PageObjectResponse));

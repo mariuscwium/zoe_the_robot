@@ -49,9 +49,7 @@ export async function dispatchTool(
   name: string,
   input: ToolInput,
 ): Promise<ToolResult> {
-  console.log(`[dispatch] tool=${name} input=${JSON.stringify(input)}`);
   const result = await executeToolCall(deps, member, name, input);
-  console.log(`[dispatch] tool=${name} success=${String(result.success)} data=${JSON.stringify(result.data ?? result.error)}`);
   if (MUTATING_TOOLS.has(name)) {
     await auditMutation(deps, member, name, input);
   }
