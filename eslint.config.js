@@ -4,7 +4,7 @@ import sonarjs from "eslint-plugin-sonarjs";
 // eslint-disable-next-line @typescript-eslint/no-deprecated
 export default tseslint.config(
   {
-    ignores: ["node_modules/", "dist/", "coverage/", "logs/"],
+    ignores: ["node_modules/", "dist/", "coverage/", "logs/", "tui/", "twins/"],
   },
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,

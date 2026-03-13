@@ -19,6 +19,7 @@ import { TelegramTwin } from "../../twins/telegram.js";
 import { CalendarTwin } from "../../twins/calendar.js";
 import { CalendarProviderTwin } from "../../twins/calendar-provider.js";
 import { TranscriptionTwin } from "../../twins/transcription.js";
+import { createNotionTwin } from "../../twins/notion.js";
 import { createWebhookHandler } from "../../api/telegram.js";
 import { upsertMember, getMember } from "../../lib/registry.js";
 import { runBootstrap } from "../../scripts/bootstrap.js";
@@ -165,7 +166,7 @@ function setup(claudeResponses: ClaudeMessage[] = [textResponse("OK")]): TestCon
   const calendar = new CalendarProviderTwin(calendarTwin);
   const claude = new StubClaude(claudeResponses);
   const transcription = new TranscriptionTwin();
-  const deps: Deps = { redis, telegram, calendar, claude, transcription, clock };
+  const deps: Deps = { redis, telegram, calendar, claude, transcription, clock, notion: createNotionTwin().client };
   const handler = createWebhookHandler(deps, { webhookSecret: WEBHOOK_SECRET });
   return { clock, redis, telegram, calendar: calendarTwin, claude, deps, handler };
 }

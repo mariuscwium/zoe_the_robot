@@ -6,6 +6,7 @@ import { TelegramTwin } from "../twins/telegram.js";
 import { CalendarTwin } from "../twins/calendar.js";
 import { CalendarProviderTwin } from "../twins/calendar-provider.js";
 import { TranscriptionTwin } from "../twins/transcription.js";
+import { createNotionTwin } from "../twins/notion.js";
 import { upsertMember } from "../lib/registry.js";
 import type { FamilyMember } from "../lib/types.js";
 import { createWebhookHandler } from "./telegram.js";
@@ -104,7 +105,7 @@ function setup(): TestContext {
   const calendar = new CalendarProviderTwin(new CalendarTwin());
   const claude = new StubClaude();
   const transcription = new TranscriptionTwin();
-  const deps: Deps = { redis, telegram, calendar, claude, transcription, clock };
+  const deps: Deps = { redis, telegram, calendar, claude, transcription, clock, notion: createNotionTwin().client };
   const handler = createWebhookHandler(deps, { webhookSecret: WEBHOOK_SECRET });
   return { redis, telegram, claude, deps, handler };
 }
