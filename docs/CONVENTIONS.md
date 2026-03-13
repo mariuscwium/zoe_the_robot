@@ -59,6 +59,13 @@
 - All env vars documented in `.env.example`
 - Vercel env vars must be set with `printf '%s'` (not `echo`) to avoid trailing newlines
 
+## ESLint Config
+
+- ESLint config self-lints under `strictTypeChecked` — requires two inline disables:
+  - `tseslint.config()` → `// eslint-disable-next-line @typescript-eslint/no-deprecated`
+  - `tsconfigRootDir: import.meta.dirname` → `// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment`
+- `--max-warnings=0` on lint script — warnings are errors
+
 ## Testing
 
 - Quality gate: `npm run typecheck && npm run lint && npm test`

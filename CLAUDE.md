@@ -18,6 +18,7 @@ lib/debug-*    Debug UI (auth, api, dispatch, html, panels)
 twins/         Digital twins — stateful behavioural clones of Redis, Telegram, Calendar
 tools/         Claude tool definitions (schemas only)
 evals/         Eval framework — prompt versioning, inference scenarios, result artifacts
+.claude/skills/ Reusable skills (ts-quality-harness, create-subagent, create-evals)
 scripts/       Bootstrap + local dev server
 tests/         Integration scenario tests (Features 0–7)
 docs/          RFC, Gherkin spec, ADRs, conventions, status
@@ -62,6 +63,7 @@ npm run bootstrap -- --chatid=111111 --name=Marius --timezone=Pacific/Auckland
 - Vercel env vars set via `echo` get trailing newlines — use `printf '%s'` with Vercel CLI
 - `VERCEL_URL` is per-deployment, not the stable alias — derive user-facing URLs from `GOOGLE_OAUTH_REDIRECT_URI`
 - Claude API rejects empty text content blocks — skip them for captionless photos
+- Background subagents cannot inherit tool permissions — run tool-heavy evals inline or in foreground
 
 ## Documentation Gardening
 
