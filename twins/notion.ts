@@ -146,6 +146,9 @@ export function createNotionTwin(): { client: NotionClient; twin: NotionTwin } {
     },
     updatePage(pageId: string, markdown: string): Promise<void> {
       const { results: existing } = twin.blocks.children.list({ block_id: pageId });
+      if (existing.length > 100) {
+        return Promise.reject(new Error(`Page has too many blocks (${String(existing.length)}). Use append_notion_page instead.`));
+      }
       for (const block of existing) twin.blocks.delete({ block_id: block.id });
       const newBlocks = markdownToBlocks(markdown);
       twin.blocks.children.append({ block_id: pageId, children: newBlocks });
