@@ -6,6 +6,7 @@
 import type { RedisClient, CalendarClient, CalendarProvider, Clock, NotionClient } from "./deps.js";
 import type { FamilyMember, ToolResult } from "./types.js";
 import { isNotionTool, routeNotionTool } from "./notion-dispatch.js";
+import { fetchPageContent } from "./web-fetch.js";
 import {
   readMemory,
   writeMemory,
@@ -102,6 +103,10 @@ async function routeToolCall(
 
   if (isNotionTool(name)) {
     return routeNotionTool(deps.notion, name, input);
+  }
+  if (name === "visit_link") {
+    const content = await fetchPageContent(str(input, "url"));
+    return { success: true, data: content };
   }
   if (name === "confirm_action") {
     return { success: true, data: "Confirmed" };

@@ -338,6 +338,22 @@ const appendNotionPage: ClaudeTool = {
   },
 };
 
+const visitLink: ClaudeTool = {
+  name: "visit_link",
+  description:
+    "Visit a web URL and return the page content as markdown. Use this when a user shares a link or when you need to read a web page (recipes, articles, etc). Returns clean readable text extracted from the page.",
+  input_schema: {
+    type: "object",
+    properties: {
+      url: {
+        type: "string",
+        description: "The full URL to visit, e.g. 'https://example.com/page'.",
+      },
+    },
+    required: ["url"],
+  },
+};
+
 const confirmAction: ClaudeTool = {
   name: "confirm_action",
   description:
@@ -359,5 +375,5 @@ export const TOOL_DEFINITIONS: ClaudeTool[] = [
   readMemory, writeMemory, deleteMemory, listMemoryKeys, appendMemory,
   listEvents, createEvent, createRecurringEvent, deleteCalendarEvent, findEvents,
   searchNotion, readNotionPage, createNotionPage, updateNotionPage, appendNotionPage,
-  confirmAction,
+  visitLink, confirmAction,
 ];
