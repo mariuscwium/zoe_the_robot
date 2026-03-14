@@ -47,6 +47,7 @@ function buildNotionClient(): NotionClient {
       createPage: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
       updatePage: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
       appendToPage: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
+      movePage: () => Promise.reject(new Error(NOTION_NOT_CONFIGURED)),
     };
   }
   return createNotionClient(apiKey);

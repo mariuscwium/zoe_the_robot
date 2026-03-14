@@ -165,6 +165,7 @@ export interface NotionClient {
   createPage(parentId: string, title: string, markdown: string): Promise<NotionPage>;
   updatePage(pageId: string, markdown: string): Promise<void>;
   appendToPage(pageId: string, markdown: string): Promise<void>;
+  movePage(pageId: string, newParentId: string): Promise<void>;
 }
 
 // --- Clock ---

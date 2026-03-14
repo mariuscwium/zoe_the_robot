@@ -9,8 +9,8 @@ import type { ToolResult } from "./types.js";
 type ToolInput = Record<string, unknown>;
 
 const NOTION_TOOLS = new Set([
-  "search_notion", "read_notion_page",
-  "create_notion_page", "update_notion_page", "append_notion_page",
+  "search_notion", "read_notion_page", "create_notion_page",
+  "update_notion_page", "append_notion_page", "move_notion_page",
 ]);
 
 export function isNotionTool(name: string): boolean {
@@ -47,6 +47,9 @@ export async function routeNotionTool(
     case "append_notion_page":
       await notion.appendToPage(str(input, "page_id"), str(input, "markdown"));
       return { success: true, data: "Content appended." };
+    case "move_notion_page":
+      await notion.movePage(str(input, "page_id"), str(input, "new_parent_page_id"));
+      return { success: true, data: "Page moved." };
     default:
       return { success: false, error: `Unknown Notion tool: ${name}` };
   }

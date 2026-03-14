@@ -338,6 +338,26 @@ const appendNotionPage: ClaudeTool = {
   },
 };
 
+const moveNotionPage: ClaudeTool = {
+  name: "move_notion_page",
+  description:
+    "Move a Notion page under a different parent page. Use search_notion to find both the page to move and the target parent.",
+  input_schema: {
+    type: "object",
+    properties: {
+      page_id: {
+        type: "string",
+        description: "The Notion page ID to move.",
+      },
+      new_parent_page_id: {
+        type: "string",
+        description: "The ID of the new parent page.",
+      },
+    },
+    required: ["page_id", "new_parent_page_id"],
+  },
+};
+
 const visitLink: ClaudeTool = {
   name: "visit_link",
   description:
@@ -374,6 +394,6 @@ const confirmAction: ClaudeTool = {
 export const TOOL_DEFINITIONS: ClaudeTool[] = [
   readMemory, writeMemory, deleteMemory, listMemoryKeys, appendMemory,
   listEvents, createEvent, createRecurringEvent, deleteCalendarEvent, findEvents,
-  searchNotion, readNotionPage, createNotionPage, updateNotionPage, appendNotionPage,
+  searchNotion, readNotionPage, createNotionPage, updateNotionPage, appendNotionPage, moveNotionPage,
   visitLink, confirmAction,
 ];

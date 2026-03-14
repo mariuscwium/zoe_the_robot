@@ -42,6 +42,7 @@ const MUTATING_TOOLS = new Set([
   "create_notion_page",
   "update_notion_page",
   "append_notion_page",
+  "move_notion_page",
 ]);
 
 export async function dispatchTool(

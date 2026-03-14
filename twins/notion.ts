@@ -60,6 +60,14 @@ export class NotionTwin {
       this._twin._store.set(id, page);
       return pageToResponse(page);
     },
+    update(params: { page_id: string; parent?: { page_id: string } }): NotionPageResponse {
+      const page = this._twin.getStoredPage(params.page_id);
+      if (params.parent) {
+        page.parentId = params.parent.page_id;
+      }
+      page.lastEditedTime = new Date().toISOString();
+      return pageToResponse(page);
+    },
   };
 
   blocks = {
@@ -157,6 +165,10 @@ export function createNotionTwin(): { client: NotionClient; twin: NotionTwin } {
     appendToPage(pageId: string, markdown: string): Promise<void> {
       const blocks = markdownToBlocks(markdown);
       twin.blocks.children.append({ block_id: pageId, children: blocks });
+      return Promise.resolve();
+    },
+    movePage(pageId: string, newParentId: string): Promise<void> {
+      twin.pages.update({ page_id: pageId, parent: { page_id: newParentId } });
       return Promise.resolve();
     },
   };

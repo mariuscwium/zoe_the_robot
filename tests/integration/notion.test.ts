@@ -109,6 +109,18 @@ describe("Notion integration", () => {
     expect(result.error).toContain("too many blocks");
   });
 
+  it("move changes page parent", async () => {
+    const folder1 = twin.addPage("Folder 1", "");
+    const folder2 = twin.addPage("Folder 2", "");
+    const pageId = twin.addPage("My Page", "content", folder1);
+    const result = await dispatchTool(deps, member, "move_notion_page", {
+      page_id: pageId, new_parent_page_id: folder2,
+    });
+    expect(result.success).toBe(true);
+    const stored = twin.getStoredPage(pageId);
+    expect(stored.parentId).toBe(folder2);
+  });
+
   it("notion tools are audited as mutations", async () => {
     const parentId = twin.addPage("Parent", "");
     await dispatchTool(deps, member, "create_notion_page", {

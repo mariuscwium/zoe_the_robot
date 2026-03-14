@@ -20,6 +20,7 @@ export function createNotionClient(apiKey: string): NotionClient {
     createPage: (parentId, title, md) => createPage(sdk, parentId, title, md),
     updatePage: (pageId, md) => updatePage(sdk, pageId, md),
     appendToPage: (pageId, md) => appendToPage(sdk, pageId, md),
+    movePage: (pageId, newParentId) => movePage(sdk, pageId, newParentId),
   };
 }
 
@@ -79,6 +80,13 @@ async function appendToPage(sdk: Client, pageId: string, md: string): Promise<vo
   await sdk.blocks.children.append({
     block_id: pageId,
     children: blocks as unknown as Parameters<typeof sdk.blocks.children.append>[0]["children"],
+  });
+}
+
+async function movePage(sdk: Client, pageId: string, newParentId: string): Promise<void> {
+  await sdk.pages.move({
+    page_id: pageId,
+    parent: { page_id: newParentId },
   });
 }
 
